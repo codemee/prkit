@@ -30,7 +30,7 @@ prkit
 Or install the latest stable release directly from GitHub. The `latest` tag is updated for every stable release:
 
 ```powershell
-uv tool install git+https://github.com/codemee/prtools.git@latest
+uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
@@ -50,7 +50,7 @@ You can also run from a downloaded project directory or directly from GitHub:
 
 ```powershell
 uvx --from . prkit
-uvx --from git+https://github.com/codemee/prtools.git@latest prkit
+uvx --from git+https://github.com/codemee/prkit.git@latest prkit
 ```
 
 `uvx` prepares and runs the application in an isolated environment without persistently installing the `prkit` command in the tool directory.

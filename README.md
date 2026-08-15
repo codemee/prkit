@@ -30,7 +30,7 @@ prkit
 或直接從 GitHub 安裝最新正式版；`latest` 標籤會在每次正式發布時更新：
 
 ```powershell
-uv tool install git+https://github.com/codemee/prtools.git@latest
+uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
@@ -50,7 +50,7 @@ uvx prkit
 
 ```powershell
 uvx --from . prkit
-uvx --from git+https://github.com/codemee/prtools.git@latest prkit
+uvx --from git+https://github.com/codemee/prkit.git@latest prkit
 ```
 
 `uvx` 會在隔離環境中準備並執行程式，不會把 `prkit` 持久安裝到工具目錄。

@@ -19,9 +19,9 @@ prkit = "prkit.app:main"
 prkit-cursor-watchdog = "prkit.cursor_watchdog:main"
 
 [project.urls]
-Homepage = "https://github.com/codemee/prtools"
-Repository = "https://github.com/codemee/prtools"
-Issues = "https://github.com/codemee/prtools/issues"
+Homepage = "https://github.com/codemee/prkit"
+Repository = "https://github.com/codemee/prkit"
+Issues = "https://github.com/codemee/prkit/issues"
 
 [tool.pytest.ini_options]
 addopts = "-q"
