@@ -1,6 +1,6 @@
 from PySide6.QtCore import QSettings
 
-from prtools.settings import (
+from prkit.settings import (
     MAX_SPOTLIGHT_SIZE,
     MIN_SPOTLIGHT_SIZE,
     AppSettings,

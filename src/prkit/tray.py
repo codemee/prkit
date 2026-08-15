@@ -19,9 +19,9 @@ from PySide6.QtWidgets import (
     QWidgetAction,
 )
 
-from prtools.icon import tray_icon
-from prtools.platform import is_wayland
-from prtools.settings import (
+from prkit.icon import tray_icon
+from prkit.platform import is_wayland
+from prkit.settings import (
     MAX_SPOTLIGHT_SIZE,
     MIN_SPOTLIGHT_SIZE,
     AppSettings,

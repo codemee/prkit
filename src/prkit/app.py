@@ -7,11 +7,11 @@ from contextlib import suppress
 from PySide6.QtCore import QObject, QSignalBlocker, QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
 
-from prtools.keyboard import KeyboardMonitor
-from prtools.overlays import KeystrokeOverlay
-from prtools.settings import SettingsStore, SettingsStoreProtocol
-from prtools.spotlight import SpotlightBackend, create_spotlight
-from prtools.tray import TrayController
+from prkit.keyboard import KeyboardMonitor
+from prkit.overlays import KeystrokeOverlay
+from prkit.settings import SettingsStore, SettingsStoreProtocol
+from prkit.spotlight import SpotlightBackend, create_spotlight
+from prkit.tray import TrayController
 
 
 class AppController(QObject):
@@ -168,7 +168,7 @@ class AppController(QObject):
 def create_application(arguments: Sequence[str] | None = None) -> QApplication:
     app = QApplication(list(arguments) if arguments is not None else sys.argv)
     app.setApplicationName("簡報瑞士刀")
-    app.setOrganizationName("prtools")
+    app.setOrganizationName("prkit")
     app.setQuitOnLastWindowClosed(False)
     return app
 

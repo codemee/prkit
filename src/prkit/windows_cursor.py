@@ -10,8 +10,8 @@ import uuid
 from ctypes import wintypes
 from pathlib import Path
 
-from prtools.cursor_watchdog import restore_system_cursors
-from prtools.settings import SpotlightSettings
+from prkit.cursor_watchdog import restore_system_cursors
+from prkit.settings import SpotlightSettings
 
 DIB_RGB_COLORS = 0
 DI_NORMAL = 0x0003
@@ -120,17 +120,17 @@ class CursorWatchdog:
             raise
 
     def _command(self) -> list[str]:
-        sibling = Path(sys.executable).with_name("prtools-cursor-watchdog.exe")
+        sibling = Path(sys.executable).with_name("prkit-cursor-watchdog.exe")
         if sibling.is_file():
             return [str(sibling), str(os.getpid()), self._event_name]
         if "__compiled__" in globals():
-            raise CursorBackendError("找不到 prtools-cursor-watchdog.exe")
+            raise CursorBackendError("找不到 prkit-cursor-watchdog.exe")
         pythonw = Path(sys.executable).with_name("pythonw.exe")
         executable = pythonw if pythonw.is_file() else Path(sys.executable)
         return [
             str(executable),
             "-m",
-            "prtools.cursor_watchdog",
+            "prkit.cursor_watchdog",
             str(os.getpid()),
             self._event_name,
         ]

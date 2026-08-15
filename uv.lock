@@ -45,8 +45,8 @@ wheels = [
 ]
 
 [[package]]
-name = "prtools"
-version = "0.0.1"
+name = "prkit"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "pynput" },

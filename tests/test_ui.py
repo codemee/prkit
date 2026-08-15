@@ -1,9 +1,9 @@
 from PySide6.QtCore import QPoint
 from PySide6.QtGui import QCursor
 
-from prtools.overlays import KeystrokeOverlay, SpotlightOverlay
-from prtools.settings import AppSettings, KeystrokeSettings, SpotlightSettings
-from prtools.tray import SettingsPanel
+from prkit.overlays import KeystrokeOverlay, SpotlightOverlay
+from prkit.settings import AppSettings, KeystrokeSettings, SpotlightSettings
+from prkit.tray import SettingsPanel
 
 
 def test_spotlight_resizes_around_same_center(qtbot, monkeypatch) -> None:

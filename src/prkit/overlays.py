@@ -4,12 +4,12 @@ from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QRect, Qt, 
 from PySide6.QtGui import QColor, QCursor, QFont, QGuiApplication, QPainter, QPaintEvent
 from PySide6.QtWidgets import QWidget
 
-from prtools.platform import (
+from prkit.platform import (
     configure_overlay_level,
     keep_window_topmost,
     make_window_click_through,
 )
-from prtools.settings import KeystrokeSettings, SpotlightSettings
+from prkit.settings import KeystrokeSettings, SpotlightSettings
 
 
 class OverlayWindow(QWidget):

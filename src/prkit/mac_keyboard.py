@@ -142,7 +142,7 @@ class MacKeyboardListener:
             return False, "請在系統設定的「輸入監控」中允許 ChatGPT"
         self._ready.clear()
         self._error = None
-        self._thread = threading.Thread(target=self._run, name="prtools-mac-keyboard", daemon=True)
+        self._thread = threading.Thread(target=self._run, name="prkit-mac-keyboard", daemon=True)
         self._thread.start()
         if not self._ready.wait(timeout=2):
             return False, "鍵盤事件監聽啟動逾時"

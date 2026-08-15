@@ -1,6 +1,6 @@
 [project]
-name = "prtools"
-version = "0.0.1"
+name = "prkit"
+version = "0.1.0"
 description = "A cross-platform system-tray presentation toolkit"
 readme = "README.md"
 authors = [
@@ -15,8 +15,13 @@ dependencies = [
 ]
 
 [project.scripts]
-prtools = "prtools.app:main"
-prtools-cursor-watchdog = "prtools.cursor_watchdog:main"
+prkit = "prkit.app:main"
+prkit-cursor-watchdog = "prkit.cursor_watchdog:main"
+
+[project.urls]
+Homepage = "https://github.com/codemee/prtools"
+Repository = "https://github.com/codemee/prtools"
+Issues = "https://github.com/codemee/prtools/issues"
 
 [tool.pytest.ini_options]
 addopts = "-q"

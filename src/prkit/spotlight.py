@@ -3,8 +3,8 @@ from __future__ import annotations
 import sys
 from typing import Protocol
 
-from prtools.overlays import SpotlightOverlay
-from prtools.settings import SpotlightSettings
+from prkit.overlays import SpotlightOverlay
+from prkit.settings import SpotlightSettings
 
 
 class SpotlightBackend(Protocol):
@@ -20,7 +20,7 @@ class SpotlightBackend(Protocol):
 
 def create_spotlight(settings: SpotlightSettings) -> SpotlightBackend:
     if sys.platform == "win32":
-        from prtools.windows_cursor import WindowsCursorSpotlight
+        from prkit.windows_cursor import WindowsCursorSpotlight
 
         return WindowsCursorSpotlight(settings)
     return SpotlightOverlay(settings)

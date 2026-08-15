@@ -1,7 +1,7 @@
 from PySide6.QtCore import QObject, Signal
 
-from prtools.app import AppController
-from prtools.settings import AppSettings
+from prkit.app import AppController
+from prkit.settings import AppSettings
 
 
 class MemoryStore:

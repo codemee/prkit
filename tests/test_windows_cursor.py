@@ -3,7 +3,7 @@ import sys
 
 import pytest
 
-from prtools.windows_cursor import ICONINFO, _paint_circle, _paint_monochrome_cursor
+from prkit.windows_cursor import ICONINFO, _paint_circle, _paint_monochrome_cursor
 
 
 def test_argb_circle_has_transparent_corners_and_colored_center() -> None:

@@ -5,7 +5,7 @@ from typing import Any
 
 from PySide6.QtCore import QObject, Signal
 
-from prtools.keys import KeyChordTracker
+from prkit.keys import KeyChordTracker
 
 
 class KeyboardMonitor(QObject):
@@ -27,7 +27,7 @@ class KeyboardMonitor(QObject):
             return True, None
         try:
             if sys.platform == "darwin":
-                from prtools.mac_keyboard import MacKeyboardListener
+                from prkit.mac_keyboard import MacKeyboardListener
 
                 listener = MacKeyboardListener(self._on_press, self._on_release)
                 success, error = listener.start()

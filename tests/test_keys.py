@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from prtools.keys import KeyChordTracker, key_label
+from prkit.keys import KeyChordTracker, key_label
 
 
 @dataclass(frozen=True)
