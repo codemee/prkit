@@ -34,7 +34,7 @@ uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
-若要固定特定版本，將 `latest` 改成版本標籤，例如 `v0.1.0`。
+若要固定特定版本，將 `latest` 改成版本標籤，例如 `v0.1.1`。
 
 若安裝後找不到 `prkit` 指令，執行 `uv tool update-shell`，再重新開啟終端機。移除工具可使用 `uv tool uninstall prkit`。
 

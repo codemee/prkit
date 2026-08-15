@@ -34,7 +34,7 @@ uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
-To pin a specific release, replace `latest` with a version tag such as `v0.1.0`.
+To pin a specific release, replace `latest` with a version tag such as `v0.1.1`.
 
 If the `prkit` command is not found after installation, run `uv tool update-shell` and open a new terminal. To remove the tool, run `uv tool uninstall prkit`.
 
