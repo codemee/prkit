@@ -25,7 +25,7 @@ The Windows download is a single EXE containing the runtime and cursor-recovery 
 
 These builds do not use a Windows publisher certificate or Apple Developer ID signing/notarization; macOS uses an ad-hoc signature. Follow your operating system's security prompts to allow a download whose source you have verified. The macOS keystroke display still requires Input Monitoring permission for `PRKit`; input source status does not. Each download has a corresponding `.sha256` checksum file.
 
-Version tags automatically trigger GitHub cloud builds and tests of the standalone EXE and mounted DMG. To build manually, run **Build desktop apps** in Actions and download its Artifacts. See the [release guide](docs/RELEASING.md).
+Version tags automatically trigger GitHub cloud desktop builds, tests of the standalone EXE and mounted DMG, and PyPI publishing. To build desktop apps manually, run **Build desktop apps** in Actions and download its Artifacts. See the [release guide](docs/RELEASING.md).
 
 ## Install from PyPI
 

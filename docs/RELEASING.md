@@ -10,7 +10,7 @@ Desktop applications and Python distributions are built in GitHub Actions. Local
 | --- | --- | --- |
 | `ci.yml` / CI | Push、PR、手動 / manual | Windows、macOS、Linux 程式碼檢查與測試 / checks and tests |
 | `desktop.yml` / Build desktop apps | `v*` 標籤、手動 / tags or manual | Windows x64 單檔 EXE、macOS Apple Silicon arm64 DMG、SHA-256 校驗檔 |
-| `publish.yml` / Publish to PyPI | 手動，指定版本標籤 / manual on a version tag | Wheel、sdist，使用 PyPI Trusted Publishing 發佈 |
+| `publish.yml` / Publish to PyPI | `v*` 標籤自動觸發；手動可重試 / tags or manual retry | Wheel、sdist，使用 PyPI Trusted Publishing 發佈 |
 
 桌面版使用獨立 `build` 相依群組中的 PyInstaller，版本由 `uv.lock` 固定。Windows runner 為 `windows-latest`；macOS runner 為 `macos-15`（arm64）。不提供 Intel macOS 建置或 Linux 桌面安裝包。
 
@@ -65,7 +65,11 @@ git push origin v0.2.1
 
 推送標籤會自動觸發桌面打包。兩個平台都通過後，流程將 EXE、DMG 與校驗檔附到該版本的 GitHub Release；若不存在就建立草稿。草稿不會自動公開，讓維護者完成 PyPI 與版本說明後統一發布。
 
-The tag triggers desktop builds automatically. Once both pass, the EXE, DMG, and checksums are attached to the matching GitHub Release, creating a draft if none exists. Drafts remain unpublished until the maintainer finishes PyPI verification and release notes.
+The tag automatically triggers both desktop builds and PyPI publishing. Once both desktop builds pass, the EXE, DMG, and checksums are attached to the matching GitHub Release, creating a draft if none exists. Drafts remain unpublished until the maintainer finishes PyPI verification and release notes.
+
+推送同一版本標籤也會自動啟動 **Publish to PyPI**，無需另外按執行。下列手動指令僅供失敗後重試；同一 ref 的執行會排隊，`uv publish --check-url` 會檢查已存在的檔案以避免重複上傳。請先確認原執行結果，不要更改已發布的版本內容。
+
+No separate dispatch is needed for PyPI. Use the manual command below only to retry a failed run. Runs for the same ref are serialized, and `uv publish --check-url` checks existing files to skip duplicate uploads. Inspect the original result first; never modify an already published version.
 
 ```bash
 gh workflow run publish.yml --ref v0.2.1
@@ -75,7 +79,7 @@ gh run view <run-id>
 
 `publish.yml` 拒絕與版本不符的標籤或分支；其 build job 產生 wheel／sdist，publish job 使用 `pypi` environment 與 `id-token: write` 進行 Trusted Publishing，不需保存 PyPI API token。PyPI 必須預先信任 `codemee/prkit` 的 `publish.yml`／`pypi` environment。
 
-`publish.yml` rejects branch refs and mismatched version tags. It builds wheel/sdist distributions and publishes with the `pypi` environment and OIDC (`id-token: write`). PyPI must already trust this repository, workflow, and environment; no API token is stored.
+`publish.yml` rejects branch refs and mismatched version tags, including manual runs. It builds wheel/sdist distributions and publishes with the `pypi` environment and OIDC (`id-token: write`). PyPI must already trust this repository, workflow, and environment; no API token is stored.
 
 確認 PyPI 版本頁與桌面資產都存在後，將版本說明寫入檔案並公開 Release：
 

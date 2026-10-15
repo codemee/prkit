@@ -26,7 +26,7 @@ Windows 為單一 EXE，已包含執行環境與游標復原 watchdog，不需�
 
 桌面版尚未使用 Windows 發行者憑證或 Apple Developer ID 簽署／公證；macOS 僅使用 ad-hoc 簽章。若系統阻擋你確認來源的下載檔案，請依系統安全提示允許開啟。macOS 按鍵顯示仍需在「輸入監控」允許 `PRKit`；輸入法狀態模式不需此權限。每個下載檔另提供 `.sha256` 校驗檔。
 
-版本標籤會自動觸發 GitHub 雲端打包與成品測試；手動建置可在 Actions 的 **Build desktop apps** 執行，成品在該次執行的 Artifacts。詳細操作見[發佈指南](docs/RELEASING.md)。
+版本標籤會自動觸發 GitHub 雲端桌面打包、成品測試與 PyPI 發佈；手動桌面建置可在 Actions 的 **Build desktop apps** 執行，成品在該次執行的 Artifacts。詳細操作見[發佈指南](docs/RELEASING.md)。
 
 ## 從 PyPI 安裝
 

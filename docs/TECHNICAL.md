@@ -81,7 +81,7 @@ Windows 單檔 EXE 以 `--cursor-watchdog` 模式啟動另一個獨立程序；�
 
 `desktop/build.py` 只由 Windows／macOS runner 執行。Windows 僅複製單一 EXE 到新暫存資料夾；macOS 驗證、唯讀掛載 DMG 並確認 Applications 捷徑，再執行其中 App 的 `--smoke-test`。測試報告寫入檔案，適用沒有 stdout 的 GUI 執行檔；測試不載入使用者偏好、不啟用聚光燈、不修改游標。Windows 實際驗證 watchdog 就緒與正常退出；macOS 驗證 HID、輸入來源查詢與 observer 清理，並檢查映像檔內 App 的簽章。成功後才輸出校驗檔及上傳套件。
 
-`desktop.yml` 於版本標籤或手動觸發，在 GitHub 建置 Windows x64 與 macOS arm64；版本標籤建置完成後將資產附到 Release，必要時建立草稿。PyPI 發佈仍由 `publish.yml` 手動觸發，並驗證版本標籤與套件版本一致。完整流程見[發佈指南](RELEASING.md)。
+`desktop.yml` 於版本標籤或手動觸發，在 GitHub 建置 Windows x64 與 macOS arm64；版本標籤建置完成後將資產附到 Release，必要時建立草稿。`publish.yml` 同樣在推送 `v*` 標籤後自動建置並發佈 PyPI，保留手動重試，並驗證版本標籤與套件版本一致；相同 ref 排隊執行，上傳前檢查已存在的檔案。完整流程見[發佈指南](RELEASING.md)。
 
 ## 驗證
 

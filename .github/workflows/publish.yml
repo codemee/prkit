@@ -1,7 +1,14 @@
 name: Publish to PyPI
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
+
+concurrency:
+  group: pypi-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -48,4 +55,4 @@ jobs:
           name: python-package-distributions
           path: dist/
       - uses: astral-sh/setup-uv@v6
-      - run: uv publish --trusted-publishing always dist/*
+      - run: uv publish --trusted-publishing always --check-url https://pypi.org/simple/ dist/*

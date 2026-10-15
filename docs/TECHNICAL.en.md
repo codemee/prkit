@@ -81,7 +81,7 @@ The Windows EXE launches itself with `--cursor-watchdog` to start an independent
 
 `desktop/build.py` runs on Windows/macOS runners. It copies only the Windows EXE to a new directory, or verifies and mounts the macOS DMG read-only and checks its Applications shortcut, before executing `--smoke-test`. Reports are written to files because GUI executables may have no stdout. The test does not load user preferences, enable the spotlight, or change cursors. Windows verifies watchdog readiness and normal termination. macOS checks HID/input source queries, observer cleanup, and the app's signature inside the image. Checksums and uploaded packages follow successful tests.
 
-`desktop.yml` builds Windows x64 and macOS arm64 on version tags or manual dispatch. Successful tag builds attach assets to the matching release, creating a draft when necessary. PyPI publishing remains a manual `publish.yml` run with matching-tag/version validation. See the [release guide](RELEASING.md).
+`desktop.yml` builds Windows x64 and macOS arm64 on version tags or manual dispatch. Successful tag builds attach assets to the matching release, creating a draft when necessary. `publish.yml` also runs automatically on `v*` tag pushes, with manual retries and matching-tag/version validation. Runs for the same ref are serialized, and uploads check for existing files. See the [release guide](RELEASING.md).
 
 ## Verification
 

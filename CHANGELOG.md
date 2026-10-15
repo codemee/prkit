@@ -1,5 +1,10 @@
 # Changelog / 版本紀錄
 
+## Unreleased / 尚未發佈
+
+- PyPI 在推送 `v*` 版本標籤後自動發布，保留手動重試；相同 ref 排隊執行，並在上傳前檢查已存在的檔案。
+- Automatically publish to PyPI on `v*` tag pushes, retaining serialized manual retries and duplicate-file checks.
+
 ## [0.2.1] - 2026-10-15
 
 ### 變更 / Changed
