@@ -12,6 +12,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+      - name: Validate version tag
+        env:
+          RELEASE_REF: ${{ github.ref }}
+        run: |
+          uv run --no-project --python 3.12 python - <<'PY'
+          import os
+          import sys
+          import tomllib
+          from pathlib import Path
+          sys.path.insert(0, "src")
+          from prkit import __version__
+          version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          assert version == __version__, "Package and runtime versions differ"
+          assert os.environ["RELEASE_REF"] == f"refs/tags/v{version}", "Publish from a matching version tag"
+          PY
       - run: uv build --no-sources
       - uses: actions/upload-artifact@v4
         with:

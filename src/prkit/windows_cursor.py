@@ -123,7 +123,7 @@ class CursorWatchdog:
         sibling = Path(sys.executable).with_name("prkit-cursor-watchdog.exe")
         if sibling.is_file():
             return [str(sibling), str(os.getpid()), self._event_name]
-        if "__compiled__" in globals():
+        if getattr(sys, "frozen", False) or "__compiled__" in globals():
             raise CursorBackendError("找不到 prkit-cursor-watchdog.exe")
         pythonw = Path(sys.executable).with_name("pythonw.exe")
         executable = pythonw if pythonw.is_file() else Path(sys.executable)

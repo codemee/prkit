@@ -1,0 +1,84 @@
+name: Build desktop apps
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            platform: windows-x64
+          - os: macos-15
+            platform: macos-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked --group build --python 3.12
+      - name: Validate release version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          uv run python - <<'PY'
+          import os
+          from importlib.metadata import version
+          from prkit import __version__
+          assert os.environ["RELEASE_TAG"] == f"v{__version__}"
+          assert version("prkit") == __version__
+          PY
+      - name: Build and test extracted desktop archive
+        run: uv run --group build python desktop/build.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-package-${{ matrix.platform }}
+          path: |
+            dist/PRKit-*.zip
+            dist/PRKit-*.zip.sha256
+          if-no-files-found: error
+          compression-level: 0
+      - name: Upload smoke-test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-smoke-${{ matrix.platform }}
+          path: build/desktop-smoke.json
+          if-no-files-found: ignore
+
+  release-assets:
+    name: Attach desktop archives to release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: desktop-package-*
+          merge-multiple: true
+          path: artifacts
+      - name: Attach to existing release or create a draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --verify-tag --draft --title "prkit $RELEASE_TAG" --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" artifacts/*.zip artifacts/*.sha256 --clobber

@@ -39,6 +39,50 @@ This backend requires the macOS Input Monitoring permission. The application mai
 - On Windows, the spotlight replaces the real system cursor, and an independent watchdog restores it after an unexpected termination. Keyboard monitoring uses `pynput`.
 - On Linux, the spotlight uses a transparent overlay and keyboard monitoring uses `pynput`. X11 has the most complete support; Wayland is constrained by global-input and click-through protocols.
 
+## Caps Lock and input source status
+
+`AppController` selects one monitor using `CapsLockSettings.mode`, sharing the draggable `CapsLockOverlay`. Switching modes stops both monitors and hides the previous indicator before starting the selected source. Signals from the inactive mode cannot replace the current text. Status monitoring operates independently of the keystroke display.
+
+| Platform | Caps Lock source | Input source mode |
+| --- | --- | --- |
+| Windows | Toggle bit from `GetKeyState(0x14)` | Not implemented; no option shown |
+| macOS | IOKit `IOHIDGetModifierLockState` | Selected system input source |
+| Linux X11 | Root window `query_pointer()` and `LockMask` | Not implemented; no option shown |
+| Wayland | Unsupported; enabling reverts the toggle and reports the error | Unsupported |
+
+### macOS Caps Lock indicator mode
+
+`MacCapsLockState` connects to `IOHIDSystem` using `ctypes` and queries `kIOHIDCapsLockState`. This reads the system lock state rather than the keyboard LED directly. `CapsLockMonitor` polls every 100 ms. When Input Monitoring permission is available, a separate listen-only keyboard monitor also forwards `flagsChanged` notifications through a Qt signal to request a fresh query on the main thread. Polling continues without that permission. Event flags never directly determine the displayed ON/OFF state. Stopping releases the HID connection and keyboard monitor.
+
+When macOS uses Caps Lock to switch input sources, a short press can produce a transient ON followed by OFF; holding the key enables persistent uppercase locking. Language switching and uppercase locking are separate states. The application does not invert or latch the lock state to infer English mode.
+
+### macOS input source mode
+
+`MacInputSourceReader` uses HIToolbox's `TISCopyCurrentKeyboardInputSource` and `TISGetInputSourceProperty` to retrieve the selected source ID and localized name. Each query releases its source reference with `CFRelease`. `InputSourceMonitor` subscribes to distributed notifications named by `kTISNotifySelectedKeyboardInputSourceChanged`, with 100 ms polling as a fallback. Only source changes update the indicator.
+
+- Built-in Zhuyin (`com.apple.inputmethod.TCIM.Zhuyin`) displays `中文（注音）`.
+- ABC/U.S. displays `英文`; other sources display their localized names.
+- This tracks the selected system input source, not private language modes inside a third-party input method that retains the same source ID.
+- This mode uses no keyboard event tap, requires no Input Monitoring permission, and reads no typed text.
+- The native notification block must return `None`, never the result of `Signal.emit()`. Returning that result can raise a PyObjC exception and terminate the application when a notification arrives.
+- Stopping removes the native observer. Read failures stop monitoring, revert the enabled toggle, and notify the user.
+
+### Presentation and persistence
+
+The overlay updates on the Qt main thread and uses `repaint()` for immediate drawing. Native macOS window animations are disabled, and the nonactivating style is set only when missing. The indicator does not force window activation or call `orderFrontRegardless()`.
+
+Caps Lock mode displays ON/OFF; input source mode displays the source label. Appearance updates preserve the current text. Display duration is 1–60 seconds, or 0 to remain visible. Dragging pauses the timeout; releasing saves the position and restarts the timeout. `QSettings` stores the mode, enabled state, color, opacity, duration, and position under `capslock/*`. Existing settings default to `capslock`; unknown modes and non-macOS platforms fall back to Caps Lock mode.
+
+## Desktop packaging
+
+`desktop/PRKit.spec` uses PyInstaller's one-folder layout to include Python, Qt, and platform dependencies. `desktop/launcher.py` is the GUI entry point. The macOS bundle uses the stable identifier `com.codemee.prkit`, version metadata, and `LSUIElement` to retain menu-bar-only operation. Cloud builds render ICO/ICNS icons from the existing SVG. The macOS app is ad-hoc signed and archived with `ditto` to preserve framework symlinks.
+
+Windows builds a separate `prkit-cursor-watchdog.exe` beside `PRKit.exe`, sharing `_internal`. `CursorWatchdog` selects the sibling executable; a frozen build fails explicitly when the helper is absent instead of trying to run the GUI executable as a Python interpreter with `-m`. The spec explicitly collects pynput's dynamically loaded Windows backends.
+
+`desktop/build.py` runs on Windows/macOS runners, creates the ZIP, extracts it to a new temporary location, and executes the frozen `--smoke-test`. Reports are written to files because GUI executables may have no stdout. The test does not load user preferences, enable the spotlight, or change cursors. Windows verifies normal helper termination. macOS checks HID/input source queries, observer cleanup, and the extracted app's signature. Checksums and uploaded packages follow successful tests.
+
+`desktop.yml` builds Windows x64 and macOS arm64 on version tags or manual dispatch. Successful tag builds attach assets to the matching release, creating a draft when necessary. PyPI publishing remains a manual `publish.yml` run with matching-tag/version validation. See the [release guide](RELEASING.md).
+
 ## Verification
 
 Run these checks before committing:
@@ -50,3 +94,7 @@ uv run pytest -q
 ```
 
 Manual macOS verification should cover moving the cursor into the menu bar, opening the tray panel, changing focus, Chinese and English input methods, ordinary letters and punctuation, modifier combinations, and combinations already registered by another shortcut utility.
+
+For the status indicator, also verify short Caps Lock presses switching Zhuyin/ABC, holding Caps Lock to enable uppercase locking, switching sources through menus and shortcuts, updating without mouse movement, switching display modes, preserving text across appearance changes, and restoring dragged positions after restart. Automated tests cover event flags not overriding the lock source, native callback return values, source changes and deduplication, failure cleanup, mode switching, and saved settings.
+
+See the [release guide](RELEASING.md) for packaging and publishing, and the [changelog](../CHANGELOG.md) for user-visible changes.

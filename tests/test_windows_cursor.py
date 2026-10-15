@@ -3,7 +3,35 @@ import sys
 
 import pytest
 
-from prkit.windows_cursor import ICONINFO, _paint_circle, _paint_monochrome_cursor
+from prkit.windows_cursor import (
+    ICONINFO,
+    CursorBackendError,
+    CursorWatchdog,
+    _paint_circle,
+    _paint_monochrome_cursor,
+)
+
+
+def test_frozen_watchdog_uses_sibling_executable(tmp_path, monkeypatch) -> None:
+    import os
+
+    executable = tmp_path / "PRKit.exe"
+    helper = tmp_path / "prkit-cursor-watchdog.exe"
+    helper.touch()
+    monkeypatch.setattr(sys, "executable", str(executable))
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    watchdog = object.__new__(CursorWatchdog)
+    watchdog._event_name = "test-stop-event"
+    assert watchdog._command() == [str(helper), str(os.getpid()), "test-stop-event"]
+
+
+def test_frozen_watchdog_never_relaunches_gui_as_python(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(sys, "executable", str(tmp_path / "PRKit.exe"))
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    watchdog = object.__new__(CursorWatchdog)
+    watchdog._event_name = "test-stop-event"
+    with pytest.raises(CursorBackendError, match="prkit-cursor-watchdog.exe"):
+        watchdog._command()
 
 
 def test_argb_circle_has_transparent_corners_and_colored_center() -> None:

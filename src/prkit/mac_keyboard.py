@@ -142,7 +142,7 @@ class MacKeyboardListener:
 
     def start(self) -> tuple[bool, str | None]:
         if not CGPreflightListenEventAccess():
-            return False, "請在系統設定的「輸入監控」中允許 ChatGPT"
+            return False, "請在系統設定的「輸入監控」中允許啟動 prkit 的應用程式"
         self._ready.clear()
         self._error = None
         self._thread = threading.Thread(target=self._run, name="prkit-mac-keyboard", daemon=True)
