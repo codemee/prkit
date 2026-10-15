@@ -1,5 +1,16 @@
 # Changelog / 版本紀錄
 
+## [0.2.1] - 2026-10-15
+
+### 變更 / Changed
+
+- Windows x64 改為單一 `.exe`，直接下載執行，不需另外解壓執行環境或 watchdog。
+- 單檔 EXE 以專用參數啟動獨立 watchdog，使用獨立解壓環境與就緒握手，保留主程式異常終止後的游標復原能力。
+- macOS Apple Silicon 改為 `.dmg`，包含 `PRKit.app` 與 Applications 捷徑，供拖曳安裝。
+- GitHub 雲端建置會驗證獨立 EXE，以及唯讀掛載 DMG 內的 App，並提供 SHA-256 校驗檔。
+- Windows x64 is distributed as a standalone EXE with an independent watchdog mode and startup handshake.
+- Apple Silicon macOS is distributed as a DMG with an Applications shortcut. Cloud tests verify the standalone EXE and the app inside the mounted DMG.
+
 ## [0.2.0] - 2026-10-15
 
 ### 新增
@@ -35,3 +46,4 @@
 Earlier releases are listed on [GitHub Releases](https://github.com/codemee/prkit/releases).
 
 [0.2.0]: https://github.com/codemee/prkit/compare/v0.1.1...v0.2.0
+[0.2.1]: https://github.com/codemee/prkit/compare/v0.2.0...v0.2.1

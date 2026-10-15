@@ -1,6 +1,6 @@
 [project]
 name = "prkit"
-version = "0.2.0"
+version = "0.2.1"
 description = "A cross-platform system-tray presentation toolkit"
 readme = "README.md"
 authors = [

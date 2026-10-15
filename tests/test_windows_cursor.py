@@ -12,26 +12,101 @@ from prkit.windows_cursor import (
 )
 
 
-def test_frozen_watchdog_uses_sibling_executable(tmp_path, monkeypatch) -> None:
+def test_installed_watchdog_uses_sibling_executable(tmp_path, monkeypatch) -> None:
     import os
 
     executable = tmp_path / "PRKit.exe"
     helper = tmp_path / "prkit-cursor-watchdog.exe"
     helper.touch()
     monkeypatch.setattr(sys, "executable", str(executable))
-    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "frozen", False, raising=False)
     watchdog = object.__new__(CursorWatchdog)
     watchdog._event_name = "test-stop-event"
-    assert watchdog._command() == [str(helper), str(os.getpid()), "test-stop-event"]
+    watchdog._ready_event_name = "test-ready-event"
+    assert watchdog._command() == [
+        str(helper),
+        str(os.getpid()),
+        "test-stop-event",
+        "test-ready-event",
+    ]
 
 
-def test_frozen_watchdog_never_relaunches_gui_as_python(tmp_path, monkeypatch) -> None:
+def test_frozen_watchdog_uses_same_exe_in_watchdog_mode(tmp_path, monkeypatch) -> None:
+    import os
+
     monkeypatch.setattr(sys, "executable", str(tmp_path / "PRKit.exe"))
     monkeypatch.setattr(sys, "frozen", True, raising=False)
     watchdog = object.__new__(CursorWatchdog)
     watchdog._event_name = "test-stop-event"
-    with pytest.raises(CursorBackendError, match="prkit-cursor-watchdog.exe"):
-        watchdog._command()
+    watchdog._ready_event_name = "test-ready-event"
+    assert watchdog._command() == [
+        sys.executable,
+        "--cursor-watchdog",
+        str(os.getpid()),
+        "test-stop-event",
+        "test-ready-event",
+    ]
+
+
+@pytest.mark.parametrize("failure", [None, "exit", "timeout"])
+def test_watchdog_waits_for_readiness_with_independent_runtime(monkeypatch, failure) -> None:
+    import os
+    from types import SimpleNamespace
+
+    import prkit.windows_cursor as module
+
+    handles = iter([101, 102])
+    waits = iter([258, 0])
+    closed = []
+    spawned = []
+
+    class Process:
+        terminated = False
+
+        def poll(self):
+            return 1 if failure == "exit" else None
+
+        def terminate(self):
+            self.terminated = True
+
+        def wait(self, timeout):
+            return 0
+
+    process = Process()
+
+    def spawn(command, **kwargs):
+        spawned.append((command, kwargs))
+        return process
+
+    def wait(handle, timeout):
+        assert handle == 102
+        return 258 if failure else next(waits)
+
+    kernel = SimpleNamespace(
+        CreateEventW=lambda *args: next(handles),
+        WaitForSingleObject=wait,
+        SetEvent=lambda handle: True,
+        CloseHandle=lambda handle: closed.append(handle),
+    )
+    monkeypatch.setattr(ctypes, "windll", SimpleNamespace(kernel32=kernel), raising=False)
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setenv("PYINSTALLER_RESET_ENVIRONMENT", "0")
+    monkeypatch.setattr(module.subprocess, "Popen", spawn)
+    if failure == "timeout":
+        times = iter([0, 31])
+        monkeypatch.setattr(module.time, "monotonic", lambda: next(times))
+    if failure:
+        with pytest.raises(CursorBackendError):
+            CursorWatchdog()
+        assert sorted(closed) == [101, 102]
+        assert process.terminated == (failure == "timeout")
+    else:
+        watchdog = CursorWatchdog()
+        assert closed == [102]
+        watchdog.stop()
+        assert closed == [102, 101]
+    assert spawned[0][1]["env"]["PYINSTALLER_RESET_ENVIRONMENT"] == "1"
+    assert os.environ["PYINSTALLER_RESET_ENVIRONMENT"] == "0"
 
 
 def test_argb_circle_has_transparent_corners_and_colored_center() -> None:

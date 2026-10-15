@@ -22,7 +22,7 @@
     - 保存顯示模式、外觀、時間與位置；螢幕移除後須回到可見螢幕。顯示不得搶取鍵盤焦點，更新不應依賴滑鼠移動。
 4. 結束：取消上面各項工具的效果後結束程式
 5. 發佈與打包：由 GitHub Actions 雲端建置 Python 套件、Windows x64 桌面版與 macOS Apple Silicon App。
-    - 桌面版不需另安裝 Python／uv；Windows 套件須包含獨立游標復原 watchdog，macOS 不建置 Intel 版。
+    - 桌面版不需另安裝 Python／uv；Windows 提供可直接執行的單一 EXE，內含獨立游標復原 watchdog 模式；macOS 提供含 Applications 拖曳捷徑的 DMG，不建置 Intel 版。
     - `v*` 版本標籤自動觸發桌面打包；手動執行可取得測試 artifact，不自動公開版本。
-    - 壓縮後須對重新解壓的成品執行啟動測試，提供 SHA-256 校驗檔；兩平台成功後附到 GitHub Release，沒有 Release 時建立草稿。
+    - Windows 須驗證不依賴旁置檔案的單一 EXE，macOS 須唯讀掛載 DMG 並對其中 App 執行啟動測試；提供 SHA-256 校驗檔，兩平台成功後附到 GitHub Release，沒有 Release 時建立草稿。
     - PyPI 沿用手動版本標籤觸發與 Trusted Publishing；維護者確認後公開 Release 並更新 `latest` 穩定版標籤。

@@ -1,4 +1,4 @@
-"""Verify the extracted frozen bundle without altering desktop preferences."""
+"""Verify a standalone download without altering desktop preferences."""
 
 from __future__ import annotations
 

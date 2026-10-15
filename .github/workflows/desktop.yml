@@ -41,14 +41,16 @@ jobs:
           assert os.environ["RELEASE_TAG"] == f"v{__version__}"
           assert version("prkit") == __version__
           PY
-      - name: Build and test extracted desktop archive
+      - name: Build and test standalone desktop download
         run: uv run --group build python desktop/build.py
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-package-${{ matrix.platform }}
           path: |
-            dist/PRKit-*.zip
-            dist/PRKit-*.zip.sha256
+            dist/PRKit-*.exe
+            dist/PRKit-*.dmg
+            dist/PRKit-*.exe.sha256
+            dist/PRKit-*.dmg.sha256
           if-no-files-found: error
           compression-level: 0
       - name: Upload smoke-test report
@@ -60,7 +62,7 @@ jobs:
           if-no-files-found: ignore
 
   release-assets:
-    name: Attach desktop archives to release
+    name: Attach desktop downloads to release
     if: startsWith(github.ref, 'refs/tags/v')
     needs: build
     runs-on: ubuntu-latest
@@ -81,4 +83,4 @@ jobs:
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" --verify-tag --draft --title "prkit $RELEASE_TAG" --generate-notes
           fi
-          gh release upload "$RELEASE_TAG" artifacts/*.zip artifacts/*.sha256 --clobber
+          gh release upload "$RELEASE_TAG" artifacts/*.exe artifacts/*.dmg artifacts/*.sha256 --clobber

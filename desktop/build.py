@@ -1,4 +1,4 @@
-"""Build, archive, and smoke-test a native PRKit desktop bundle."""
+"""Build and smoke-test a standalone EXE or macOS DMG on GitHub runners."""
 
 from __future__ import annotations
 
@@ -67,48 +67,84 @@ def main() -> None:
     target = "windows" if sys.platform == "win32" else "macos"
     architecture = {"amd64": "x64", "x86_64": "x64", "arm64": "arm64"}[platform.machine().lower()]
     name = f"PRKit-{__version__}-{target}-{architecture}"
-    archive = ROOT / "dist" / f"{name}.zip"
-    if sys.platform == "darwin":
-        subprocess.run(
-            [
-                "ditto",
-                "-c",
-                "-k",
-                "--sequesterRsrc",
-                "--keepParent",
-                "dist/PRKit.app",
-                str(archive),
-            ],
-            cwd=ROOT,
-            check=True,
-        )
-    else:
-        shutil.make_archive(str(archive.with_suffix("")), "zip", ROOT / "dist", "PRKit")
-
     report = ROOT / "build" / "desktop-smoke.json"
     report.unlink(missing_ok=True)
-    with tempfile.TemporaryDirectory(prefix="prkit-smoke-") as temporary:
-        extracted = Path(temporary)
-        if sys.platform == "darwin":
-            subprocess.run(["ditto", "-x", "-k", str(archive), temporary], check=True)
-            executable = extracted / "PRKit.app" / "Contents" / "MacOS" / "PRKit"
+    if sys.platform == "darwin":
+        artifact = ROOT / "dist" / f"{name}.dmg"
+        stage = ROOT / "build" / "dmg-stage"
+        if stage.exists():
+            shutil.rmtree(stage)
+        stage.mkdir(parents=True)
+        subprocess.run(
+            ["ditto", str(ROOT / "dist" / "PRKit.app"), str(stage / "PRKit.app")], check=True
+        )
+        (stage / "Applications").symlink_to("/Applications")
+        subprocess.run(
+            [
+                "hdiutil",
+                "create",
+                "-volname",
+                "PRKit",
+                "-srcfolder",
+                str(stage),
+                "-fs",
+                "HFS+",
+                "-format",
+                "UDZO",
+                "-ov",
+                str(artifact),
+            ],
+            check=True,
+        )
+        subprocess.run(["hdiutil", "verify", str(artifact)], check=True)
+        with tempfile.TemporaryDirectory(prefix="prkit-dmg-test-") as temporary:
+            mount = Path(temporary) / "mounted"
+            mount.mkdir()
             subprocess.run(
-                ["codesign", "--verify", "--deep", "--strict", str(extracted / "PRKit.app")],
+                [
+                    "hdiutil",
+                    "attach",
+                    "-readonly",
+                    "-nobrowse",
+                    "-mountpoint",
+                    str(mount),
+                    str(artifact),
+                ],
                 check=True,
             )
-        else:
-            shutil.unpack_archive(archive, extracted)
-            executable = extracted / "PRKit" / "PRKit.exe"
-        result = subprocess.run([str(executable), "--smoke-test", str(report)], timeout=90)
-        if report.exists():
-            print(report.read_text(encoding="utf-8"), flush=True)
-        result.check_returncode()
-        if not report.exists() or not json.loads(report.read_text(encoding="utf-8"))["ok"]:
-            raise RuntimeError("Frozen executable did not produce a successful smoke-test report")
-    with archive.open("rb") as stream:
+            try:
+                subprocess.run(
+                    ["codesign", "--verify", "--deep", "--strict", str(mount / "PRKit.app")],
+                    check=True,
+                )
+                if not (mount / "Applications").is_symlink():
+                    raise RuntimeError("DMG is missing the Applications shortcut")
+                smoke_test(mount / "PRKit.app" / "Contents" / "MacOS" / "PRKit", report)
+            finally:
+                subprocess.run(["hdiutil", "detach", str(mount)], check=True)
+    else:
+        artifact = ROOT / "dist" / f"{name}.exe"
+        shutil.copy2(ROOT / "dist" / "PRKit.exe", artifact)
+        # Only the single EXE is copied; no sibling helper or runtime directory.
+        with tempfile.TemporaryDirectory(prefix="prkit-exe-test-") as temporary:
+            executable = Path(temporary) / artifact.name
+            shutil.copy2(artifact, executable)
+            smoke_test(executable, report)
+    with artifact.open("rb") as stream:
         digest = hashlib.file_digest(stream, "sha256").hexdigest()
-    archive.with_suffix(".zip.sha256").write_text(f"{digest}  {archive.name}\n", encoding="utf-8")
-    print(f"Built and verified: {archive}", flush=True)
+    artifact.with_suffix(artifact.suffix + ".sha256").write_text(
+        f"{digest}  {artifact.name}\n", encoding="utf-8"
+    )
+    print(f"Built and verified: {artifact}", flush=True)
+
+
+def smoke_test(executable: Path, report: Path) -> None:
+    result = subprocess.run([str(executable), "--smoke-test", str(report)], timeout=180)
+    if report.exists():
+        print(report.read_text(encoding="utf-8"), flush=True)
+    result.check_returncode()
+    if not report.exists() or not json.loads(report.read_text(encoding="utf-8"))["ok"]:
+        raise RuntimeError("Frozen executable did not produce a successful smoke-test report")
 
 
 if __name__ == "__main__":

@@ -19,12 +19,12 @@
 
 | 平台 | 下載檔案 | 啟動方式 |
 | --- | --- | --- |
-| Windows x64 | `PRKit-0.2.0-windows-x64.zip` | 完整解壓後執行 `PRKit/PRKit.exe` |
-| macOS Apple Silicon | `PRKit-0.2.0-macos-arm64.zip` | 解壓後將 `PRKit.app` 移到「應用程式」再開啟 |
+| Windows x64 | `PRKit-0.2.1-windows-x64.exe` | 直接開啟執行 |
+| macOS Apple Silicon | `PRKit-0.2.1-macos-arm64.dmg` | 開啟 DMG，將 `PRKit.app` 拖到「Applications」捷徑後啟動 |
 
-Windows 須保留同資料夾的 `prkit-cursor-watchdog.exe` 與 `_internal`，不可只複製主程式。macOS 目前僅提供 Apple Silicon 版。程式啟動後顯示在系統匣／選單列，不會開啟主視窗。
+Windows 為單一 EXE，已包含執行環境與游標復原 watchdog，不需額外下載檔案。macOS 目前僅提供 Apple Silicon 版。程式啟動後顯示在系統匣／選單列，不會開啟主視窗。
 
-桌面版尚未使用 Windows 發行者憑證或 Apple Developer ID 簽署／公證；macOS 僅使用 ad-hoc 簽章。若系統阻擋你確認來源的下載檔案，請依系統安全提示允許開啟。macOS 按鍵顯示仍需在「輸入監控」允許 `PRKit`；輸入法狀態模式不需此權限。每個 ZIP 另提供 `.sha256` 校驗檔。
+桌面版尚未使用 Windows 發行者憑證或 Apple Developer ID 簽署／公證；macOS 僅使用 ad-hoc 簽章。若系統阻擋你確認來源的下載檔案，請依系統安全提示允許開啟。macOS 按鍵顯示仍需在「輸入監控」允許 `PRKit`；輸入法狀態模式不需此權限。每個下載檔另提供 `.sha256` 校驗檔。
 
 版本標籤會自動觸發 GitHub 雲端打包與成品測試；手動建置可在 Actions 的 **Build desktop apps** 執行，成品在該次執行的 Artifacts。詳細操作見[發佈指南](docs/RELEASING.md)。
 
@@ -51,7 +51,7 @@ uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
-若要固定特定版本，將 `latest` 改成版本標籤，例如 `v0.2.0`。
+若要固定特定版本，將 `latest` 改成版本標籤，例如 `v0.2.1`。
 
 若安裝後找不到 `prkit` 指令，執行 `uv tool update-shell`，再重新開啟終端機。移除工具可使用 `uv tool uninstall prkit`。
 

@@ -18,14 +18,14 @@ Download from [GitHub Releases](https://github.com/codemee/prkit/releases/latest
 
 | Platform | Archive | Launch |
 | --- | --- | --- |
-| Windows x64 | `PRKit-0.2.0-windows-x64.zip` | Extract everything and run `PRKit/PRKit.exe` |
-| macOS Apple Silicon | `PRKit-0.2.0-macos-arm64.zip` | Extract and move `PRKit.app` into Applications |
+| Windows x64 | `PRKit-0.2.1-windows-x64.exe` | Open the executable directly |
+| macOS Apple Silicon | `PRKit-0.2.1-macos-arm64.dmg` | Open the DMG and drag `PRKit.app` onto its Applications shortcut |
 
-Keep the Windows executable together with `prkit-cursor-watchdog.exe` and `_internal`; do not copy only the main executable. The macOS download supports Apple Silicon only. The application appears in the tray/menu bar without opening a main window.
+The Windows download is a single EXE containing the runtime and cursor-recovery watchdog; no additional files are required. The macOS download supports Apple Silicon only. The application appears in the tray/menu bar without opening a main window.
 
-These builds do not use a Windows publisher certificate or Apple Developer ID signing/notarization; macOS uses an ad-hoc signature. Follow your operating system's security prompts to allow a download whose source you have verified. The macOS keystroke display still requires Input Monitoring permission for `PRKit`; input source status does not. Each ZIP has a corresponding `.sha256` checksum file.
+These builds do not use a Windows publisher certificate or Apple Developer ID signing/notarization; macOS uses an ad-hoc signature. Follow your operating system's security prompts to allow a download whose source you have verified. The macOS keystroke display still requires Input Monitoring permission for `PRKit`; input source status does not. Each download has a corresponding `.sha256` checksum file.
 
-Version tags automatically trigger GitHub cloud builds and tests of the extracted archives. To build manually, run **Build desktop apps** in Actions and download its Artifacts. See the [release guide](docs/RELEASING.md).
+Version tags automatically trigger GitHub cloud builds and tests of the standalone EXE and mounted DMG. To build manually, run **Build desktop apps** in Actions and download its Artifacts. See the [release guide](docs/RELEASING.md).
 
 ## Install from PyPI
 
@@ -50,7 +50,7 @@ uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
-To pin a specific release, replace `latest` with a version tag such as `v0.2.0`.
+To pin a specific release, replace `latest` with a version tag such as `v0.2.1`.
 
 If the `prkit` command is not found after installation, run `uv tool update-shell` and open a new terminal. To remove the tool, run `uv tool uninstall prkit`.
 

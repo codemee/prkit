@@ -9,6 +9,13 @@ from pathlib import Path
 
 
 def main() -> int:
+    if len(sys.argv) == 5 and sys.argv[1] == "--cursor-watchdog":
+        if sys.platform != "win32":
+            return 2
+        from prkit.cursor_watchdog import watch
+
+        return watch(int(sys.argv[2]), sys.argv[3], sys.argv[4])
+
     if len(sys.argv) == 3 and sys.argv[1] == "--smoke-test":
         report = Path(sys.argv[2])
         try:

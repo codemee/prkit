@@ -14,35 +14,30 @@ analysis = Analysis(
     hiddenimports=hidden,
     excludes=["tkinter", "PyQt5", "PyQt6", "PySide2"],
 )
-exe = EXE(
-    PYZ(analysis.pure),
-    analysis.scripts,
-    [],
-    exclude_binaries=True,
-    name="PRKit",
-    console=False,
-    upx=False,
-    icon=str(assets / ("PRKit.ico" if is_windows else "PRKit.icns")),
-)
-parts = [exe, analysis.binaries, analysis.datas]
 if is_windows:
-    watchdog = Analysis(
-        [str(root / "desktop" / "watchdog.py")],
-        pathex=[str(root / "src")],
-    )
-    helper = EXE(
-        PYZ(watchdog.pure),
-        watchdog.scripts,
+    exe = EXE(
+        PYZ(analysis.pure),
+        analysis.scripts,
+        analysis.binaries,
+        analysis.datas,
         [],
-        exclude_binaries=True,
-        name="prkit-cursor-watchdog",
+        name="PRKit",
         console=False,
         upx=False,
         icon=str(assets / "PRKit.ico"),
     )
-    parts.extend([helper, watchdog.binaries, watchdog.datas])
-bundle = COLLECT(*parts, name="PRKit", upx=False)
-if sys.platform == "darwin":
+else:
+    exe = EXE(
+        PYZ(analysis.pure),
+        analysis.scripts,
+        [],
+        exclude_binaries=True,
+        name="PRKit",
+        console=False,
+        upx=False,
+        icon=str(assets / "PRKit.icns"),
+    )
+    bundle = COLLECT(exe, analysis.binaries, analysis.datas, name="PRKit", upx=False)
     app = BUNDLE(
         bundle,
         name="PRKit.app",

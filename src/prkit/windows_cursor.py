@@ -101,29 +101,61 @@ class CursorWatchdog:
     def __init__(self) -> None:
         self._kernel32 = ctypes.windll.kernel32
         self._kernel32.CreateEventW.restype = wintypes.HANDLE
+        self._kernel32.CreateEventW.argtypes = [
+            ctypes.c_void_p,
+            wintypes.BOOL,
+            wintypes.BOOL,
+            wintypes.LPCWSTR,
+        ]
+        self._kernel32.SetEvent.argtypes = [wintypes.HANDLE]
+        self._kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        self._kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
         self._event_name = f"Local\\PrtoolsCursorRestore-{uuid.uuid4()}"
+        self._ready_event_name = self._event_name + "-ready"
         self._event = self._kernel32.CreateEventW(None, True, False, self._event_name)
         if not self._event:
             raise CursorBackendError("無法建立游標復原事件")
+        ready = self._kernel32.CreateEventW(None, True, False, self._ready_event_name)
+        if not ready:
+            self._kernel32.CloseHandle(self._event)
+            self._event = None
+            raise CursorBackendError("無法建立游標監控就緒事件")
         try:
+            environment = os.environ.copy()
+            if getattr(sys, "frozen", False):
+                # The watchdog must outlive the GUI and own its unpacked runtime.
+                environment["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
             self._process = subprocess.Popen(
                 self._command(),
                 creationflags=CREATE_NO_WINDOW,
                 close_fds=True,
+                env=environment,
             )
-            time.sleep(0.05)
-            if self._process.poll() is not None:
-                raise CursorBackendError("游標復原監控程序啟動失敗")
+            deadline = time.monotonic() + 30
+            while self._kernel32.WaitForSingleObject(ready, 100) != 0:
+                if self._process.poll() is not None:
+                    raise CursorBackendError("游標復原監控程序啟動失敗")
+                if time.monotonic() >= deadline:
+                    raise CursorBackendError("游標復原監控程序啟動逾時")
         except Exception:
+            self._kernel32.SetEvent(self._event)
+            if hasattr(self, "_process") and self._process.poll() is None:
+                self._process.terminate()
+                self._process.wait(timeout=5)
             self._kernel32.CloseHandle(self._event)
             self._event = None
             raise
+        finally:
+            self._kernel32.CloseHandle(ready)
 
     def _command(self) -> list[str]:
+        arguments = [str(os.getpid()), self._event_name, self._ready_event_name]
+        if getattr(sys, "frozen", False):
+            return [sys.executable, "--cursor-watchdog", *arguments]
         sibling = Path(sys.executable).with_name("prkit-cursor-watchdog.exe")
         if sibling.is_file():
-            return [str(sibling), str(os.getpid()), self._event_name]
-        if getattr(sys, "frozen", False) or "__compiled__" in globals():
+            return [str(sibling), *arguments]
+        if "__compiled__" in globals():
             raise CursorBackendError("找不到 prkit-cursor-watchdog.exe")
         pythonw = Path(sys.executable).with_name("pythonw.exe")
         executable = pythonw if pythonw.is_file() else Path(sys.executable)
@@ -131,8 +163,7 @@ class CursorWatchdog:
             str(executable),
             "-m",
             "prkit.cursor_watchdog",
-            str(os.getpid()),
-            self._event_name,
+            *arguments,
         ]
 
     def stop(self) -> None:
@@ -140,7 +171,7 @@ class CursorWatchdog:
             return
         self._kernel32.SetEvent(self._event)
         try:
-            self._process.wait(timeout=2)
+            self._process.wait(timeout=10)
         except subprocess.TimeoutExpired:
             self._process.terminate()
         self._kernel32.CloseHandle(self._event)

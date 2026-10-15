@@ -75,11 +75,11 @@ Caps Lock 提示顯示 ON／OFF，輸入法模式顯示來源名稱；調整外�
 
 ## 桌面打包
 
-`desktop/PRKit.spec` 使用 PyInstaller 的 one-folder 結構，將 Python、Qt 與平台相依套件一起打包。`desktop/launcher.py` 為 GUI 入口，macOS App 設定固定 bundle ID `com.codemee.prkit`、版本與 `LSUIElement`，維持僅選單列顯示的行為。圖示由既有 SVG 在雲端轉成 ICO／ICNS；macOS App 使用 ad-hoc 簽章，以 `ditto` 壓縮以保留 framework 符號連結。
+`desktop/PRKit.spec` 使用 PyInstaller 將 Python、Qt 與平台相依套件一起打包：Windows 使用 one-file EXE；macOS 使用 App bundle，設定固定 bundle ID `com.codemee.prkit`、版本與 `LSUIElement`，維持僅選單列顯示的行為。圖示由既有 SVG 在雲端轉成 ICO／ICNS；macOS App 使用 ad-hoc 簽章，經 `ditto` 複製後，以 `hdiutil` 建立包含 App 與 Applications 捷徑的壓縮唯讀 DMG。
 
-Windows 另建立 `prkit-cursor-watchdog.exe`，與 `PRKit.exe` 共用資料夾及 `_internal`。`CursorWatchdog` 優先啟動同資料夾的 helper；frozen 程式若找不到 helper 就明確失敗，禁止將 GUI 執行檔當成 Python 解譯器以 `-m` 再啟動。PyInstaller 明確收集 `pynput` 的動態 Windows 後端。
+Windows 單檔 EXE 以 `--cursor-watchdog` 模式啟動另一個獨立程序；入口在載入 Qt 前先分流，因此不會開啟第二個 GUI。子程序設為 `PYINSTALLER_RESET_ENVIRONMENT=1`，使用自己的解壓執行環境，避免主程式終止後依賴已移除的 runtime。父程序等待就緒事件（最多 30 秒），確認 watchdog 已開啟父程序／停止事件控制代碼後，才允許啟用聚光燈。停止時通知並等待 watchdog 退出；初始化失敗會清理控制代碼。從 Python 安裝時仍支援同環境的 console-script helper 或 `python -m prkit.cursor_watchdog`。PyInstaller 明確收集 `pynput` 的動態 Windows 後端。
 
-`desktop/build.py` 只由 Windows／macOS runner 執行，產生 ZIP 後在新的暫存位置解壓，再執行成品的 `--smoke-test`。測試報告寫入檔案，適用沒有 stdout 的 GUI 執行檔；測試不載入使用者偏好、不啟用聚光燈、不修改游標。Windows 實際驗證 helper 的正常退出；macOS 驗證 HID、輸入來源查詢與 observer 清理，並檢查解壓 App 的簽章。成功後才輸出校驗檔及上傳套件。
+`desktop/build.py` 只由 Windows／macOS runner 執行。Windows 僅複製單一 EXE 到新暫存資料夾；macOS 驗證、唯讀掛載 DMG 並確認 Applications 捷徑，再執行其中 App 的 `--smoke-test`。測試報告寫入檔案，適用沒有 stdout 的 GUI 執行檔；測試不載入使用者偏好、不啟用聚光燈、不修改游標。Windows 實際驗證 watchdog 就緒與正常退出；macOS 驗證 HID、輸入來源查詢與 observer 清理，並檢查映像檔內 App 的簽章。成功後才輸出校驗檔及上傳套件。
 
 `desktop.yml` 於版本標籤或手動觸發，在 GitHub 建置 Windows x64 與 macOS arm64；版本標籤建置完成後將資產附到 Release，必要時建立草稿。PyPI 發佈仍由 `publish.yml` 手動觸發，並驗證版本標籤與套件版本一致。完整流程見[發佈指南](RELEASING.md)。
 
