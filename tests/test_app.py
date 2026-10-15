@@ -2,6 +2,7 @@ from PySide6.QtCore import QObject, Signal
 
 from prkit.app import AppController
 from prkit.capslock import CapsLockMonitor
+from prkit.input_source import InputSourceMonitor
 from prkit.settings import AppSettings
 
 
@@ -153,3 +154,48 @@ def test_capslock_failure_reverts_enabled_state(qapp, qtbot, monkeypatch) -> Non
     assert not controller.capslock.isVisible()
     assert "not supported" in warnings[0]
     controller.cleanup()
+
+
+class FakeInputSourceMonitor(InputSourceMonitor):
+    def __init__(self) -> None:
+        super().__init__()
+        self.running = False
+
+    def start(self) -> None:
+        self.running = True
+        self.changed.emit("中文（注音）")
+
+    def stop(self) -> None:
+        self.running = False
+
+
+def test_input_source_mode_ignores_capslock_and_can_switch_back(qapp, qtbot, monkeypatch):
+    import prkit.app as module
+
+    monkeypatch.setattr(module.sys, "platform", "darwin")
+    store = MemoryStore()
+    capslock = FakeCapsLockMonitor()
+    sources = FakeInputSourceMonitor()
+    controller = AppController(qapp, store, FakeMonitor(), FakeSpotlight(), capslock, sources)
+    qtbot.addWidget(controller.capslock)
+    controller.set_capslock_enabled(True)
+    combo = controller.tray.panel.capslock_mode
+    combo.setCurrentIndex(combo.findData("input_source"))
+    assert sources.running
+    assert not capslock.running
+    assert store.settings.capslock.mode == "input_source"
+    assert controller.capslock._text == "中文（注音）"
+    capslock.changed.emit(True)
+    capslock.changed.emit(False)
+    assert controller.capslock._text == "中文（注音）"
+    sources.changed.emit("英文")
+    assert controller.capslock._text == "英文"
+    combo.setCurrentIndex(combo.findData("capslock"))
+    assert not sources.running
+    assert capslock.running
+    assert controller.capslock._text == "Caps Lock ON"
+    sources.changed.emit("中文（注音）")
+    assert controller.capslock._text == "Caps Lock ON"
+    controller.cleanup()
+    assert not sources.running
+    assert not capslock.running

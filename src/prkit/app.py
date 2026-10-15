@@ -8,6 +8,7 @@ from PySide6.QtCore import QObject, QSignalBlocker, QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from prkit.capslock import CapsLockMonitor
+from prkit.input_source import InputSourceMonitor
 from prkit.keyboard import KeyboardMonitor
 from prkit.overlays import CapsLockOverlay, KeystrokeOverlay
 from prkit.settings import SettingsStore, SettingsStoreProtocol
@@ -23,6 +24,7 @@ class AppController(QObject):
         monitor: KeyboardMonitor | None = None,
         spotlight: SpotlightBackend | None = None,
         capslock_monitor: CapsLockMonitor | None = None,
+        input_source_monitor: InputSourceMonitor | None = None,
     ) -> None:
         super().__init__()
         self._app = app
@@ -32,6 +34,9 @@ class AppController(QObject):
         self.keystroke = KeystrokeOverlay(self.settings.keystroke)
         self.capslock = CapsLockOverlay(self.settings.capslock)
         self.capslock_monitor = capslock_monitor or CapsLockMonitor(self)
+        self.input_source_monitor = input_source_monitor or InputSourceMonitor(self)
+        if sys.platform != "darwin":
+            self.settings.capslock.mode = "capslock"
         self.monitor = monitor or KeyboardMonitor(self)
         self.tray = TrayController(self.settings, self)
         self._shutting_down = False
@@ -51,7 +56,10 @@ class AppController(QObject):
         self.tray.panel.capslock_color_changed.connect(self.set_capslock_color)
         self.tray.panel.capslock_opacity_changed.connect(self.set_capslock_opacity)
         self.tray.panel.capslock_duration_changed.connect(self.set_capslock_duration)
-        self.capslock_monitor.changed.connect(self.capslock.show_state)
+        self.tray.panel.capslock_mode_changed.connect(self.set_capslock_mode)
+        self.capslock_monitor.changed.connect(self._show_capslock_state)
+        self.input_source_monitor.changed.connect(self._show_input_source)
+        self.input_source_monitor.failed.connect(self._capslock_failed)
         self.capslock_monitor.failed.connect(self._capslock_failed)
         self.capslock.position_changed.connect(self._save_capslock_position)
         self.tray.menu.aboutToShow.connect(self.spotlight.sync_position)
@@ -71,12 +79,34 @@ class AppController(QObject):
 
     def set_capslock_enabled(self, enabled: bool) -> None:
         self.settings.capslock.enabled = enabled
+        self.capslock_monitor.stop()
+        self.input_source_monitor.stop()
+        self.capslock.hide_now()
         if enabled:
-            self.capslock_monitor.start()
-        else:
-            self.capslock_monitor.stop()
-            self.capslock.hide_now()
+            if self.settings.capslock.mode == "input_source":
+                self.input_source_monitor.start()
+            else:
+                self.capslock_monitor.start()
         self._save()
+
+    def set_capslock_mode(self, mode: str) -> None:
+        if mode not in {"capslock", "input_source"}:
+            return
+        if mode == "input_source" and sys.platform != "darwin":
+            return
+        self.settings.capslock.mode = mode
+        combo = self.tray.panel.capslock_mode
+        with QSignalBlocker(combo):
+            combo.setCurrentIndex(combo.findData(mode))
+        self.set_capslock_enabled(self.settings.capslock.enabled)
+
+    def _show_capslock_state(self, state: bool) -> None:
+        if self.settings.capslock.mode == "capslock":
+            self.capslock.show_state(state)
+
+    def _show_input_source(self, name: str) -> None:
+        if self.settings.capslock.mode == "input_source":
+            self.capslock.show_input_source(name)
 
     def set_capslock_color(self, color: str) -> None:
         self.settings.capslock.color = color
@@ -102,7 +132,7 @@ class AppController(QObject):
         self.set_capslock_enabled(False)
         with QSignalBlocker(self.tray.panel.capslock_enabled):
             self.tray.panel.capslock_enabled.setChecked(False)
-        self.tray.notify_warning(f"無法顯示 Caps Lock 狀態：{message}")
+        self.tray.notify_warning(f"無法顯示鍵盤狀態：{message}")
 
     def set_spotlight_enabled(self, enabled: bool) -> None:
         try:
@@ -208,6 +238,7 @@ class AppController(QObject):
     def cleanup(self) -> None:
         self._keystroke_start_pending = False
         self.capslock_monitor.stop()
+        self.input_source_monitor.stop()
         self.capslock.hide_now()
         self.monitor.stop()
         self.spotlight.set_enabled(False)

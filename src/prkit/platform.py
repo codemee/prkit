@@ -45,6 +45,7 @@ def configure_overlay_level(widget: QWidget) -> None:
         from AppKit import (
             NSColor,
             NSFloatingWindowLevel,
+            NSWindowAnimationBehaviorNone,
             NSWindowCollectionBehaviorCanJoinAllSpaces,
             NSWindowCollectionBehaviorFullScreenAuxiliary,
             NSWindowStyleMaskNonactivatingPanel,
@@ -57,10 +58,13 @@ def configure_overlay_level(widget: QWidget) -> None:
         native_window = native_view.window()
         native_window.setLevel_(NSFloatingWindowLevel)
         native_window.setHidesOnDeactivate_(False)
+        native_window.setAnimationBehavior_(NSWindowAnimationBehaviorNone)
         native_window.setHasShadow_(False)
         native_window.setOpaque_(False)
         native_window.setBackgroundColor_(NSColor.clearColor())
-        native_window.setStyleMask_(native_window.styleMask() | NSWindowStyleMaskNonactivatingPanel)
+        style = native_window.styleMask()
+        if not style & NSWindowStyleMaskNonactivatingPanel:
+            native_window.setStyleMask_(style | NSWindowStyleMaskNonactivatingPanel)
         if native_window.respondsToSelector_("setBecomesKeyOnlyIfNeeded:"):
             native_window.setBecomesKeyOnlyIfNeeded_(True)
         native_window.setCollectionBehavior_(

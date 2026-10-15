@@ -59,6 +59,8 @@ uvx --from git+https://github.com/codemee/prkit.git@latest prkit
 
 Right-click the tray icon and enable the Caps Lock status display. A small, rounded rectangle shows `Caps Lock ON` or `Caps Lock OFF`, independently of the keystroke display. Enabling it also shows the current state.
 
+On macOS, the display content selector offers Caps Lock indicator or current input source mode. Input source mode follows the selected system input source, including switches made with Caps Lock, shortcuts, or the input menu. Built-in Zhuyin displays `中文（注音）`, ABC/U.S. displays `英文`, and other sources display their names. This mode does not require Input Monitoring permission and is independent of transient Caps Lock changes during language switching.
+
 - Choose a display duration of 1–60 seconds after each state change, or 0 (always visible).
 - Customize the background color and opacity; changes preview the indicator.
 - Drag the indicator with the left mouse button. The hide timer pauses while dragging and restarts on release. The position is saved across restarts; an unavailable screen falls back to a visible screen.

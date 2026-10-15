@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from collections.abc import Callable
 
 from PySide6.QtCore import QObject, Qt, Signal
@@ -7,6 +8,7 @@ from PySide6.QtGui import QAction, QColor
 from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
+    QComboBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -114,6 +116,7 @@ class SettingsPanel(QWidget):
     capslock_color_changed = Signal(str)
     capslock_opacity_changed = Signal(int)
     capslock_duration_changed = Signal(int)
+    capslock_mode_changed = Signal(str)
 
     def __init__(self, settings: AppSettings, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -150,8 +153,8 @@ class SettingsPanel(QWidget):
         layout.addLayout(self._row("透明度", self.keystroke_opacity))
 
         layout.addWidget(self._separator())
-        layout.addWidget(self._section_title("Caps Lock 狀態"))
-        self.capslock_enabled = QCheckBox("啟用 Caps Lock 狀態顯示")
+        layout.addWidget(self._section_title("Caps Lock／輸入法狀態"))
+        self.capslock_enabled = QCheckBox("啟用狀態顯示")
         self.capslock_enabled.setChecked(settings.capslock.enabled)
         self.capslock_color = ColorButton(settings.capslock.color)
         self.capslock_opacity = ValueSlider(10, 100, settings.capslock.opacity, "%")
@@ -162,6 +165,13 @@ class SettingsPanel(QWidget):
         self.capslock_duration.setValue(settings.capslock.duration)
         self.capslock_duration.setToolTip("狀態變化後的顯示時間；0 表示一直顯示")
         layout.addWidget(self.capslock_enabled)
+        self.capslock_mode = QComboBox()
+        self.capslock_mode.addItem("Caps Lock 指示燈", "capslock")
+        if sys.platform == "darwin":
+            self.capslock_mode.addItem("目前輸入法（中文／英文）", "input_source")
+        index = self.capslock_mode.findData(settings.capslock.mode)
+        self.capslock_mode.setCurrentIndex(max(0, index))
+        layout.addLayout(self._row("顯示內容", self.capslock_mode))
         layout.addLayout(self._row("背景顏色", self.capslock_color))
         layout.addLayout(self._row("透明度", self.capslock_opacity))
         layout.addLayout(self._row("顯示時間", self.capslock_duration))
@@ -186,6 +196,9 @@ class SettingsPanel(QWidget):
         self.capslock_color.color_changed.connect(self.capslock_color_changed)
         self.capslock_opacity.value_changed.connect(self.capslock_opacity_changed)
         self.capslock_duration.valueChanged.connect(self.capslock_duration_changed)
+        self.capslock_mode.currentIndexChanged.connect(
+            lambda index: self.capslock_mode_changed.emit(self.capslock_mode.itemData(index))
+        )
 
     def set_spotlight_enabled(self, enabled: bool) -> None:
         self.spotlight_enabled.setChecked(enabled)

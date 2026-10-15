@@ -43,6 +43,7 @@ class CapsLockSettings:
     duration: int = 3  # Seconds; zero keeps the indicator visible.
     x: int | None = None
     y: int | None = None
+    mode: str = "capslock"
 
 
 @dataclass(slots=True)
@@ -103,6 +104,11 @@ class SettingsStore:
             duration=clamp(backend.value("capslock/duration", 3, type=int), 0, 60),
             x=backend.value("capslock/x", type=int) if backend.contains("capslock/x") else None,
             y=backend.value("capslock/y", type=int) if backend.contains("capslock/y") else None,
+            mode=(
+                "input_source"
+                if backend.value("capslock/mode", "capslock") == "input_source"
+                else "capslock"
+            ),
         )
         return AppSettings(spotlight, keystroke, capslock)
 
@@ -119,6 +125,7 @@ class SettingsStore:
             "capslock/color": settings.capslock.color,
             "capslock/opacity": settings.capslock.opacity,
             "capslock/duration": settings.capslock.duration,
+            "capslock/mode": settings.capslock.mode,
         }
         for key, value in values.items():
             self._backend.setValue(key, value)

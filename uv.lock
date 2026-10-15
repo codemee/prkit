@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 
 [[package]]
@@ -51,6 +51,7 @@ source = { editable = "." }
 dependencies = [
     { name = "pynput" },
     { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
     { name = "pyside6" },
     { name = "python-xlib", marker = "sys_platform == 'linux'" },
 ]
@@ -66,6 +67,7 @@ dev = [
 requires-dist = [
     { name = "pynput", specifier = ">=1.8.2" },
     { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'", specifier = ">=12.2.1" },
+    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'", specifier = ">=12.2.1" },
     { name = "pyside6", specifier = ">=6.11.1" },
     { name = "python-xlib", marker = "sys_platform == 'linux'", specifier = ">=0.33" },
 ]

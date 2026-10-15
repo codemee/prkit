@@ -188,9 +188,10 @@ class CapsLockOverlay(OverlayWindow):
         super().__init__(interactive=True)
         self._settings = settings
         self._state = False
+        self._text = "Caps Lock OFF"
         self._drag_offset: QPoint | None = None
         self.setFixedSize(144, 40)
-        self.setToolTip("拖曳以移動 Caps Lock 狀態提示")
+        self.setToolTip("拖曳以移動狀態提示")
         self.setCursor(Qt.CursorShape.SizeAllCursor)
         font = QFont()
         font.setPointSize(11)
@@ -204,15 +205,26 @@ class CapsLockOverlay(OverlayWindow):
         if not self._settings.enabled:
             return
         self._state = enabled
+        self._text = "Caps Lock ON" if enabled else "Caps Lock OFF"
+        self._show_current_state()
+
+    def show_input_source(self, name: str) -> None:
+        self._text = name
+        self._show_current_state()
+
+    def _show_current_state(self) -> None:
+        if not self._settings.enabled:
+            return
+        self.setFixedWidth(max(144, self.fontMetrics().horizontalAdvance(self._text) + 32))
         self._place_on_screen()
         self.show()
         keep_window_topmost(self)
-        self.update()
+        self.repaint()
         self._restart_timeout()
 
     def apply_settings(self) -> None:
         if self._settings.enabled:
-            self.show_state(self._state)
+            self._show_current_state()
         else:
             self.hide_now()
 
@@ -278,5 +290,5 @@ class CapsLockOverlay(OverlayWindow):
         painter.drawText(
             self.rect(),
             Qt.AlignmentFlag.AlignCenter,
-            "Caps Lock ON" if self._state else "Caps Lock OFF",
+            self._text,
         )

@@ -6,6 +6,101 @@ from prkit.overlays import CapsLockOverlay
 from prkit.settings import CapsLockSettings
 
 
+def test_macos_monitor_reads_lock_state_without_appkit_events(qtbot, monkeypatch) -> None:
+    from types import SimpleNamespace
+
+    import prkit.capslock as capslock
+
+    state = False
+    closed = []
+
+    class LockState:
+        def read(self):
+            return state
+
+        def close(self):
+            closed.append(True)
+
+    monkeypatch.setattr(capslock.sys, "platform", "darwin")
+    monkeypatch.setitem(
+        capslock.sys.modules,
+        "prkit.mac_capslock",
+        SimpleNamespace(MacCapsLockState=LockState),
+    )
+    monitor = CapsLockMonitor()
+    monkeypatch.setattr(monitor, "_start_macos_listener", lambda: None)
+    states = []
+    monitor.changed.connect(states.append)
+    try:
+        monitor.start()
+        assert states == [False]
+        state = True
+        qtbot.waitUntil(lambda: states == [False, True])
+        state = False
+        qtbot.waitUntil(lambda: states == [False, True, False])
+    finally:
+        monitor.stop()
+    assert closed == [True]
+
+
+def test_macos_event_flags_cannot_override_lock_indicator(qtbot, monkeypatch) -> None:
+    import threading
+    from types import SimpleNamespace
+
+    import prkit.capslock as capslock
+
+    callbacks = {}
+    stopped = []
+
+    class Listener:
+        def __init__(self, **kwargs):
+            callbacks.update(kwargs)
+
+        def start(self):
+            return True, None
+
+        def stop(self):
+            stopped.append(True)
+
+    monkeypatch.setitem(
+        capslock.sys.modules, "prkit.mac_keyboard", SimpleNamespace(MacKeyboardListener=Listener)
+    )
+    monitor = CapsLockMonitor()
+    lock_state = False
+    reads = []
+
+    def read_lock():
+        reads.append(lock_state)
+        return lock_state
+
+    monitor._read = read_lock
+    states = []
+    monitor.changed.connect(states.append)
+    monitor._poll()
+    monitor._start_macos_listener()
+    # The lock indicator stays ON even when an event reports OFF.
+    lock_state = True
+
+    def emit_transitions():
+        callbacks["on_capslock"](True)
+        callbacks["on_capslock"](False)
+
+    worker = threading.Thread(target=emit_transitions)
+    worker.start()
+    worker.join()
+    qtbot.waitUntil(lambda: len(reads) == 3)
+    assert states == [False, True]
+    monitor._poll()
+    assert states == [False, True]
+    lock_state = False
+    callbacks["on_capslock"](True)
+    assert states == [False, True, False]
+    monitor.stop()
+    callbacks["on_capslock"](True)
+    assert states == [False, True, False]
+    assert stopped == [True]
+
+
 def test_windows_monitor_reads_toggle_bit(qapp, monkeypatch) -> None:
     import ctypes
     from types import SimpleNamespace
@@ -84,6 +179,20 @@ def test_timeout_and_always_visible_modes(qtbot) -> None:
     overlay.apply_settings()
     overlay.show_state(True)
     assert not overlay.isVisible()
+
+
+def test_input_source_text_survives_appearance_changes(qtbot) -> None:
+    settings = CapsLockSettings(enabled=True, mode="input_source")
+    overlay = CapsLockOverlay(settings)
+    qtbot.addWidget(overlay)
+    overlay.show_input_source("中文（注音）")
+    settings.opacity = 50
+    overlay.apply_settings()
+    assert overlay.isVisible()
+    assert overlay._text == "中文（注音）"
+    overlay.show_input_source("英文")
+    assert overlay._text == "英文"
+    overlay.hide_now()
 
 
 def test_drag_pauses_timeout_and_saves_position(qtbot) -> None:

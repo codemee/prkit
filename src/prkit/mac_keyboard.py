@@ -19,6 +19,7 @@ from Quartz import (
     CGEventTapCreate,
     CGEventTapEnable,
     CGPreflightListenEventAccess,
+    kCGEventFlagMaskAlphaShift,
     kCGEventFlagMaskAlternate,
     kCGEventFlagMaskCommand,
     kCGEventFlagMaskControl,
@@ -127,9 +128,11 @@ class MacKeyboardListener:
         self,
         on_press: Callable[[object], None],
         on_release: Callable[[object], None],
+        on_capslock: Callable[[bool], None] | None = None,
     ) -> None:
         self._on_press = on_press
         self._on_release = on_release
+        self._on_capslock = on_capslock
         self._thread: threading.Thread | None = None
         self._loop: object | None = None
         self._ready = threading.Event()
@@ -187,7 +190,10 @@ class MacKeyboardListener:
         del proxy, refcon
         keycode = int(CGEventGetIntegerValueField(event, kCGKeyboardEventKeycode))
         if event_type == kCGEventFlagsChanged:
-            self._update_modifiers(int(CGEventGetFlags(event)))
+            flags = int(CGEventGetFlags(event))
+            if self._on_capslock is not None:
+                self._on_capslock(bool(flags & kCGEventFlagMaskAlphaShift))
+            self._update_modifiers(flags)
             if keycode == 57:
                 self._press_transient_key(keycode)
             return event
