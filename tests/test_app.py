@@ -1,6 +1,7 @@
 from PySide6.QtCore import QObject, Signal
 
 from prkit.app import AppController
+from prkit.capslock import CapsLockMonitor
 from prkit.settings import AppSettings
 
 
@@ -99,3 +100,56 @@ def test_cleanup_stops_effects(qapp) -> None:
     assert not spotlight.enabled
     assert not monitor.running
     assert monitor.stop_count == 1
+
+
+class FakeCapsLockMonitor(CapsLockMonitor):
+    def __init__(self, succeeds: bool = True) -> None:
+        super().__init__()
+        self.succeeds = succeeds
+        self.running = False
+
+    def start(self) -> None:
+        self.running = self.succeeds
+        if self.succeeds:
+            self.changed.emit(True)
+        else:
+            self.failed.emit("not supported")
+
+    def stop(self) -> None:
+        self.running = False
+
+
+def test_capslock_operates_without_keystroke_monitor(qapp, qtbot) -> None:
+    store = MemoryStore()
+    keys = FakeMonitor()
+    capslock = FakeCapsLockMonitor()
+    controller = AppController(qapp, store, keys, FakeSpotlight(), capslock)
+    qtbot.addWidget(controller.capslock)
+    controller.tray.panel.capslock_enabled.click()
+    assert capslock.running
+    assert controller.capslock.isVisible()
+    assert not keys.running
+    controller.tray.panel.capslock_duration.setValue(0)
+    assert store.settings.capslock.duration == 0
+    assert not controller.capslock._hide_timer.isActive()
+    controller.capslock.position_changed.emit(-400, 100)
+    assert (store.settings.capslock.x, store.settings.capslock.y) == (-400, 100)
+    controller.cleanup()
+    assert not capslock.running
+    assert not controller.capslock.isVisible()
+
+
+def test_capslock_failure_reverts_enabled_state(qapp, qtbot, monkeypatch) -> None:
+    store = MemoryStore()
+    controller = AppController(
+        qapp, store, FakeMonitor(), FakeSpotlight(), FakeCapsLockMonitor(False)
+    )
+    qtbot.addWidget(controller.capslock)
+    warnings = []
+    monkeypatch.setattr(controller.tray, "notify_warning", warnings.append)
+    controller.tray.panel.capslock_enabled.click()
+    assert not store.settings.capslock.enabled
+    assert not controller.tray.panel.capslock_enabled.isChecked()
+    assert not controller.capslock.isVisible()
+    assert "not supported" in warnings[0]
+    controller.cleanup()

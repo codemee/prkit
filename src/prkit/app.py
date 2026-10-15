@@ -7,8 +7,9 @@ from contextlib import suppress
 from PySide6.QtCore import QObject, QSignalBlocker, QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
 
+from prkit.capslock import CapsLockMonitor
 from prkit.keyboard import KeyboardMonitor
-from prkit.overlays import KeystrokeOverlay
+from prkit.overlays import CapsLockOverlay, KeystrokeOverlay
 from prkit.settings import SettingsStore, SettingsStoreProtocol
 from prkit.spotlight import SpotlightBackend, create_spotlight
 from prkit.tray import TrayController
@@ -21,6 +22,7 @@ class AppController(QObject):
         store: SettingsStoreProtocol | None = None,
         monitor: KeyboardMonitor | None = None,
         spotlight: SpotlightBackend | None = None,
+        capslock_monitor: CapsLockMonitor | None = None,
     ) -> None:
         super().__init__()
         self._app = app
@@ -28,6 +30,8 @@ class AppController(QObject):
         self.settings = self._store.load()
         self.spotlight = spotlight or create_spotlight(self.settings.spotlight)
         self.keystroke = KeystrokeOverlay(self.settings.keystroke)
+        self.capslock = CapsLockOverlay(self.settings.capslock)
+        self.capslock_monitor = capslock_monitor or CapsLockMonitor(self)
         self.monitor = monitor or KeyboardMonitor(self)
         self.tray = TrayController(self.settings, self)
         self._shutting_down = False
@@ -43,6 +47,13 @@ class AppController(QObject):
             keystroke_opacity=self.set_keystroke_opacity,
         )
         self.tray.exit_requested.connect(self.shutdown)
+        self.tray.panel.capslock_enabled_changed.connect(self.set_capslock_enabled)
+        self.tray.panel.capslock_color_changed.connect(self.set_capslock_color)
+        self.tray.panel.capslock_opacity_changed.connect(self.set_capslock_opacity)
+        self.tray.panel.capslock_duration_changed.connect(self.set_capslock_duration)
+        self.capslock_monitor.changed.connect(self.capslock.show_state)
+        self.capslock_monitor.failed.connect(self._capslock_failed)
+        self.capslock.position_changed.connect(self._save_capslock_position)
         self.tray.menu.aboutToShow.connect(self.spotlight.sync_position)
         self.tray.menu.aboutToHide.connect(self._start_pending_keyboard_monitor)
         self.monitor.chord_pressed.connect(self.keystroke.show_chord)
@@ -55,6 +66,43 @@ class AppController(QObject):
         self.spotlight.set_enabled(self.settings.spotlight.enabled)
         if self.settings.keystroke.enabled:
             self.set_keystroke_enabled(True)
+        if self.settings.capslock.enabled:
+            self.set_capslock_enabled(True)
+
+    def set_capslock_enabled(self, enabled: bool) -> None:
+        self.settings.capslock.enabled = enabled
+        if enabled:
+            self.capslock_monitor.start()
+        else:
+            self.capslock_monitor.stop()
+            self.capslock.hide_now()
+        self._save()
+
+    def set_capslock_color(self, color: str) -> None:
+        self.settings.capslock.color = color
+        self._apply_capslock_settings()
+
+    def set_capslock_opacity(self, opacity: int) -> None:
+        self.settings.capslock.opacity = opacity
+        self._apply_capslock_settings()
+
+    def set_capslock_duration(self, duration: int) -> None:
+        self.settings.capslock.duration = duration
+        self._apply_capslock_settings()
+
+    def _apply_capslock_settings(self) -> None:
+        self.capslock.apply_settings()
+        self._save()
+
+    def _save_capslock_position(self, x: int, y: int) -> None:
+        self.settings.capslock.x, self.settings.capslock.y = x, y
+        self._save()
+
+    def _capslock_failed(self, message: str) -> None:
+        self.set_capslock_enabled(False)
+        with QSignalBlocker(self.tray.panel.capslock_enabled):
+            self.tray.panel.capslock_enabled.setChecked(False)
+        self.tray.notify_warning(f"無法顯示 Caps Lock 狀態：{message}")
 
     def set_spotlight_enabled(self, enabled: bool) -> None:
         try:
@@ -159,6 +207,8 @@ class AppController(QObject):
 
     def cleanup(self) -> None:
         self._keystroke_start_pending = False
+        self.capslock_monitor.stop()
+        self.capslock.hide_now()
         self.monitor.stop()
         self.spotlight.set_enabled(False)
         self.keystroke.hide_now()

@@ -32,6 +32,12 @@ def test_round_trip(tmp_path) -> None:
     settings.keystroke.enabled = True
     settings.keystroke.color = "#ABCDEF"
     settings.keystroke.opacity = 88
+    settings.capslock.enabled = True
+    settings.capslock.color = "#456789"
+    settings.capslock.opacity = 42
+    settings.capslock.duration = 0
+    settings.capslock.x = -1400
+    settings.capslock.y = 120
 
     store.save(settings)
 
@@ -44,6 +50,9 @@ def test_invalid_values_are_sanitized(tmp_path) -> None:
     backend.setValue("spotlight/opacity", -10)
     backend.setValue("spotlight/size", 9999)
     backend.setValue("keystroke/opacity", 200)
+    backend.setValue("capslock/color", "invalid")
+    backend.setValue("capslock/opacity", 500)
+    backend.setValue("capslock/duration", -1)
     backend.sync()
 
     settings = SettingsStore(ini_settings(tmp_path)).load()
@@ -52,6 +61,9 @@ def test_invalid_values_are_sanitized(tmp_path) -> None:
     assert settings.spotlight.opacity == 10
     assert settings.spotlight.size == MAX_SPOTLIGHT_SIZE
     assert settings.keystroke.opacity == 100
+    assert settings.capslock.color == "#202124"
+    assert settings.capslock.opacity == 100
+    assert settings.capslock.duration == 0
 
     backend.setValue("spotlight/size", 1)
     backend.sync()

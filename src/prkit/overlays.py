@@ -1,7 +1,15 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QRect, Qt, QTimer
-from PySide6.QtGui import QColor, QCursor, QFont, QGuiApplication, QPainter, QPaintEvent
+from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QRect, Qt, QTimer, Signal
+from PySide6.QtGui import (
+    QColor,
+    QCursor,
+    QFont,
+    QGuiApplication,
+    QMouseEvent,
+    QPainter,
+    QPaintEvent,
+)
 from PySide6.QtWidgets import QWidget
 
 from prkit.platform import (
@@ -9,21 +17,23 @@ from prkit.platform import (
     keep_window_topmost,
     make_window_click_through,
 )
-from prkit.settings import KeystrokeSettings, SpotlightSettings
+from prkit.settings import CapsLockSettings, KeystrokeSettings, SpotlightSettings
 
 
 class OverlayWindow(QWidget):
-    def __init__(self) -> None:
+    def __init__(self, *, interactive: bool = False) -> None:
+        self._interactive = interactive
         flags = (
             Qt.WindowType.FramelessWindowHint
             | Qt.WindowType.Tool
             | Qt.WindowType.WindowStaysOnTopHint
             | Qt.WindowType.WindowDoesNotAcceptFocus
-            | Qt.WindowType.WindowTransparentForInput
         )
+        if not interactive:
+            flags |= Qt.WindowType.WindowTransparentForInput
         super().__init__(None, flags)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
-        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, not interactive)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setAttribute(Qt.WidgetAttribute.WA_MacAlwaysShowToolWindow)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -33,7 +43,8 @@ class OverlayWindow(QWidget):
         QTimer.singleShot(0, self._configure_native_window)
 
     def _configure_native_window(self) -> None:
-        make_window_click_through(self)
+        if not self._interactive:
+            make_window_click_through(self)
         configure_overlay_level(self)
 
 
@@ -168,3 +179,104 @@ class KeystrokeOverlay(OverlayWindow):
         painter.setPen(QColor("white"))
         painter.setFont(self.font())
         painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, self._text)
+
+
+class CapsLockOverlay(OverlayWindow):
+    position_changed = Signal(int, int)
+
+    def __init__(self, settings: CapsLockSettings) -> None:
+        super().__init__(interactive=True)
+        self._settings = settings
+        self._state = False
+        self._drag_offset: QPoint | None = None
+        self.setFixedSize(144, 40)
+        self.setToolTip("拖曳以移動 Caps Lock 狀態提示")
+        self.setCursor(Qt.CursorShape.SizeAllCursor)
+        font = QFont()
+        font.setPointSize(11)
+        font.setBold(True)
+        self.setFont(font)
+        self._hide_timer = QTimer(self)
+        self._hide_timer.setSingleShot(True)
+        self._hide_timer.timeout.connect(self.hide)
+
+    def show_state(self, enabled: bool) -> None:
+        if not self._settings.enabled:
+            return
+        self._state = enabled
+        self._place_on_screen()
+        self.show()
+        keep_window_topmost(self)
+        self.update()
+        self._restart_timeout()
+
+    def apply_settings(self) -> None:
+        if self._settings.enabled:
+            self.show_state(self._state)
+        else:
+            self.hide_now()
+
+    def hide_now(self) -> None:
+        self._hide_timer.stop()
+        self._drag_offset = None
+        self.hide()
+
+    def _restart_timeout(self) -> None:
+        self._hide_timer.stop()
+        if self._settings.duration and self._drag_offset is None:
+            self._hide_timer.start(self._settings.duration * 1000)
+
+    def _place_on_screen(self) -> None:
+        screens = QGuiApplication.screens()
+        if self._settings.x is not None and self._settings.y is not None:
+            position = QPoint(self._settings.x, self._settings.y)
+            for screen in screens:
+                area = screen.availableGeometry()
+                if area.contains(position):
+                    self.move(
+                        min(position.x(), max(area.left(), area.right() - self.width() + 1)),
+                        min(position.y(), max(area.top(), area.bottom() - self.height() + 1)),
+                    )
+                    return
+        screen = QGuiApplication.screenAt(QCursor.pos()) or QGuiApplication.primaryScreen()
+        if screen is not None:
+            area = screen.availableGeometry()
+            self.move(area.center().x() - self.width() // 2, area.bottom() - self.height() - 100)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._drag_offset = event.globalPosition().toPoint() - self.pos()
+            self._hide_timer.stop()
+            event.accept()
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._drag_offset is not None:
+            self.move(event.globalPosition().toPoint() - self._drag_offset)
+            event.accept()
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self._drag_offset is not None:
+            self._drag_offset = None
+            self._settings.x, self._settings.y = self.x(), self.y()
+            self._place_on_screen()
+            self._settings.x, self._settings.y = self.x(), self.y()
+            self.position_changed.emit(self.x(), self.y())
+            self._restart_timeout()
+            event.accept()
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        del event
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        background = QColor(self._settings.color)
+        background.setAlphaF(self._settings.opacity / 100)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(background)
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 8, 8)
+        painter.setPen(QColor("black" if background.lightnessF() > 0.6 else "white"))
+        painter.setFont(self.font())
+        painter.drawText(
+            self.rect(),
+            Qt.AlignmentFlag.AlignCenter,
+            "Caps Lock ON" if self._state else "Caps Lock OFF",
+        )

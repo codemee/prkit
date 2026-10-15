@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from PySide6.QtCore import QSettings
@@ -36,9 +36,20 @@ class KeystrokeSettings:
 
 
 @dataclass(slots=True)
+class CapsLockSettings:
+    enabled: bool = False
+    color: str = "#202124"
+    opacity: int = 80
+    duration: int = 3  # Seconds; zero keeps the indicator visible.
+    x: int | None = None
+    y: int | None = None
+
+
+@dataclass(slots=True)
 class AppSettings:
     spotlight: SpotlightSettings
     keystroke: KeystrokeSettings
+    capslock: CapsLockSettings = field(default_factory=CapsLockSettings)
 
     @classmethod
     def defaults(cls) -> AppSettings:
@@ -85,7 +96,15 @@ class SettingsStore:
                 100,
             ),
         )
-        return AppSettings(spotlight, keystroke)
+        capslock = CapsLockSettings(
+            enabled=backend.value("capslock/enabled", False, type=bool),
+            color=valid_color(backend.value("capslock/color", "#202124"), "#202124"),
+            opacity=clamp(backend.value("capslock/opacity", 80, type=int), 10, 100),
+            duration=clamp(backend.value("capslock/duration", 3, type=int), 0, 60),
+            x=backend.value("capslock/x", type=int) if backend.contains("capslock/x") else None,
+            y=backend.value("capslock/y", type=int) if backend.contains("capslock/y") else None,
+        )
+        return AppSettings(spotlight, keystroke, capslock)
 
     def save(self, settings: AppSettings) -> None:
         values = {
@@ -96,7 +115,17 @@ class SettingsStore:
             "keystroke/enabled": settings.keystroke.enabled,
             "keystroke/color": settings.keystroke.color,
             "keystroke/opacity": settings.keystroke.opacity,
+            "capslock/enabled": settings.capslock.enabled,
+            "capslock/color": settings.capslock.color,
+            "capslock/opacity": settings.capslock.opacity,
+            "capslock/duration": settings.capslock.duration,
         }
         for key, value in values.items():
             self._backend.setValue(key, value)
+        for axis in ("x", "y"):
+            value = getattr(settings.capslock, axis)
+            if value is None:
+                self._backend.remove(f"capslock/{axis}")
+            else:
+                self._backend.setValue(f"capslock/{axis}", value)
         self._backend.sync()

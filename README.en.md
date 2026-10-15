@@ -55,6 +55,16 @@ uvx --from git+https://github.com/codemee/prkit.git@latest prkit
 
 `uvx` prepares and runs the application in an isolated environment without persistently installing the `prkit` command in the tool directory.
 
+## Caps Lock indicator
+
+Right-click the tray icon and enable the Caps Lock status display. A small, rounded rectangle shows `Caps Lock ON` or `Caps Lock OFF`, independently of the keystroke display. Enabling it also shows the current state.
+
+- Choose a display duration of 1–60 seconds after each state change, or 0 (always visible).
+- Customize the background color and opacity; changes preview the indicator.
+- Drag the indicator with the left mouse button. The hide timer pauses while dragging and restarts on release. The position is saved across restarts; an unavailable screen falls back to a visible screen.
+
+State detection supports Windows, macOS, and Linux X11. Wayland is currently unsupported; enabling the feature there shows a warning and disables it.
+
 ## Development
 
 uv manages Python 3.12, the virtual environment, and all dependencies:

@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QPushButton,
     QSlider,
+    QSpinBox,
     QSystemTrayIcon,
     QVBoxLayout,
     QWidget,
@@ -109,6 +110,10 @@ class SettingsPanel(QWidget):
     keystroke_enabled_changed = Signal(bool)
     keystroke_color_changed = Signal(str)
     keystroke_opacity_changed = Signal(int)
+    capslock_enabled_changed = Signal(bool)
+    capslock_color_changed = Signal(str)
+    capslock_opacity_changed = Signal(int)
+    capslock_duration_changed = Signal(int)
 
     def __init__(self, settings: AppSettings, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -144,6 +149,26 @@ class SettingsPanel(QWidget):
         layout.addLayout(self._row("顏色", self.keystroke_color))
         layout.addLayout(self._row("透明度", self.keystroke_opacity))
 
+        layout.addWidget(self._separator())
+        layout.addWidget(self._section_title("Caps Lock 狀態"))
+        self.capslock_enabled = QCheckBox("啟用 Caps Lock 狀態顯示")
+        self.capslock_enabled.setChecked(settings.capslock.enabled)
+        self.capslock_color = ColorButton(settings.capslock.color)
+        self.capslock_opacity = ValueSlider(10, 100, settings.capslock.opacity, "%")
+        self.capslock_duration = QSpinBox()
+        self.capslock_duration.setRange(0, 60)
+        self.capslock_duration.setSuffix(" 秒")
+        self.capslock_duration.setSpecialValueText("一直顯示")
+        self.capslock_duration.setValue(settings.capslock.duration)
+        self.capslock_duration.setToolTip("狀態變化後的顯示時間；0 表示一直顯示")
+        layout.addWidget(self.capslock_enabled)
+        layout.addLayout(self._row("背景顏色", self.capslock_color))
+        layout.addLayout(self._row("透明度", self.capslock_opacity))
+        layout.addLayout(self._row("顯示時間", self.capslock_duration))
+        hint = QLabel("顯示時可用滑鼠拖曳，位置會自動保存。")
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+
         if is_wayland():
             warning = QLabel("⚠ Wayland 不保證支援全域按鍵與覆蓋層")
             warning.setWordWrap(True)
@@ -157,6 +182,10 @@ class SettingsPanel(QWidget):
         self.keystroke_enabled.toggled.connect(self.keystroke_enabled_changed)
         self.keystroke_color.color_changed.connect(self.keystroke_color_changed)
         self.keystroke_opacity.value_changed.connect(self.keystroke_opacity_changed)
+        self.capslock_enabled.toggled.connect(self.capslock_enabled_changed)
+        self.capslock_color.color_changed.connect(self.capslock_color_changed)
+        self.capslock_opacity.value_changed.connect(self.capslock_opacity_changed)
+        self.capslock_duration.valueChanged.connect(self.capslock_duration_changed)
 
     def set_spotlight_enabled(self, enabled: bool) -> None:
         self.spotlight_enabled.setChecked(enabled)
