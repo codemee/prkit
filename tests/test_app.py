@@ -192,6 +192,7 @@ def test_input_source_mode_ignores_capslock_and_can_switch_back(qapp, qtbot, mon
 
     monkeypatch.setattr(module.sys, "platform", "darwin")
     store = MemoryStore()
+    store.settings.language = "zh"
     capslock = FakeCapsLockMonitor()
     sources = FakeInputSourceMonitor()
     controller = AppController(qapp, store, FakeMonitor(), FakeSpotlight(), capslock, sources)
@@ -208,6 +209,9 @@ def test_input_source_mode_ignores_capslock_and_can_switch_back(qapp, qtbot, mon
     assert controller.capslock._text == "中文（注音）"
     sources.changed.emit("英文")
     assert controller.capslock._text == "英文"
+    controller.set_language("en")
+    sources.changed.emit("中文（注音）")
+    assert controller.capslock._text == "Chinese (Zhuyin)"
     combo.setCurrentIndex(combo.findData("capslock"))
     assert not sources.running
     assert capslock.running
