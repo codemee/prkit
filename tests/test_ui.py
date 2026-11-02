@@ -1,9 +1,10 @@
 from PySide6.QtCore import QPoint
 from PySide6.QtGui import QCursor
+from PySide6.QtWidgets import QCheckBox
 
 from prkit.overlays import KeystrokeOverlay, SpotlightOverlay
 from prkit.settings import AppSettings, KeystrokeSettings, SpotlightSettings
-from prkit.tray import SettingsPanel
+from prkit.tray import SettingsPanel, TrayController
 
 
 def test_spotlight_resizes_around_same_center(qtbot, monkeypatch) -> None:
@@ -52,3 +53,27 @@ def test_settings_panel_enable_toggle(qtbot) -> None:
         panel.spotlight_enabled.click()
 
     assert signal.args == [True]
+
+
+def test_language_button_cycles_and_retranslates(qapp, qtbot) -> None:
+    tray = TrayController(AppSettings.defaults())
+    assert tray.language_mode == "system"
+    with qtbot.waitSignal(tray.language_changed) as signal:
+        tray.language_button.click()
+    assert signal.args == ["zh"]
+
+    tray.set_language("zh")
+    assert tray.language_button.icon().isNull() is False
+    with qtbot.waitSignal(tray.language_changed) as signal:
+        tray.language_button.click()
+    assert signal.args == ["en"]
+
+    tray.set_language("en")
+    assert tray.language_label.text() == "Language: English"
+    assert tray.panel.spotlight_enabled.text() == "Enable spotlight cursor"
+    assert isinstance(tray.autostart_checkbox, QCheckBox)
+    assert tray.autostart_checkbox.text() == "Start at login"
+    assert tray.exit_action.text() == "Quit"
+    with qtbot.waitSignal(tray.language_changed) as signal:
+        tray.language_button.click()
+    assert signal.args == ["system"]

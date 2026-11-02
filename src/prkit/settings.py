@@ -51,6 +51,7 @@ class AppSettings:
     spotlight: SpotlightSettings
     keystroke: KeystrokeSettings
     capslock: CapsLockSettings = field(default_factory=CapsLockSettings)
+    language: str = "system"
 
     @classmethod
     def defaults(cls) -> AppSettings:
@@ -110,10 +111,14 @@ class SettingsStore:
                 else "capslock"
             ),
         )
-        return AppSettings(spotlight, keystroke, capslock)
+        language = backend.value("language", "system")
+        if language not in {"system", "zh", "en"}:
+            language = "system"
+        return AppSettings(spotlight, keystroke, capslock, language)
 
     def save(self, settings: AppSettings) -> None:
         values = {
+            "language": settings.language,
             "spotlight/enabled": settings.spotlight.enabled,
             "spotlight/color": settings.spotlight.color,
             "spotlight/opacity": settings.spotlight.opacity,

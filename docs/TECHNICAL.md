@@ -73,6 +73,12 @@ macOS 若啟用 Caps Lock 切換中英文，短按可能產生短暫 ON 後回�
 
 Caps Lock 提示顯示 ON／OFF，輸入法模式顯示來源名稱；調整外觀時保留目前文字。顯示時間為 1–60 秒，0 表示持續顯示；拖曳時暫停倒數，放開後保存位置並重新計時。模式、啟用狀態、顏色、透明度、時間與位置使用 `QSettings` 的 `capslock/*` 鍵保存。舊設定預設使用 `capslock` 模式；未知模式與非 macOS 平台回復 Caps Lock 模式。
 
+## 開機啟動與語言
+
+`autostart.py` 以目前使用者的登入機制管理開機啟動：Windows 使用 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 的 `PRKit` 值；macOS 寫入 `~/Library/LaunchAgents/com.codemee.prkit.plist`；Linux 寫入 XDG 設定目錄下的 `autostart/prkit.desktop`。停用時只移除 PRKit 自己的項目。系統匣選單每次打開時重新讀取實際狀態；寫入失敗會還原核取方塊並顯示錯誤。打包版使用目前 EXE／App 的執行檔路徑，Python 安裝版使用同環境的 Python 執行 `-m prkit`（Windows 優先使用 `pythonw.exe`）。
+
+語言偏好保存在 `QSettings` 的 `language` 鍵，值為 `system`、`zh` 或 `en`。`system` 透過 `QLocale.system()` 選擇中文或英文；三態按鈕切換後即時更新系統匣選單與提示文字。Qt 的應用程式名稱維持固定，避免語言切換改變既有設定的儲存位置。
+
 ## 桌面打包
 
 `desktop/PRKit.spec` 使用 PyInstaller 將 Python、Qt 與平台相依套件一起打包：Windows 使用 one-file EXE；macOS 使用 App bundle，設定固定 bundle ID `com.codemee.prkit`、版本與 `LSUIElement`，維持僅選單列顯示的行為。圖示由既有 SVG 在雲端轉成 ICO／ICNS；macOS App 使用 ad-hoc 簽章，經 `ditto` 複製後，以 `hdiutil` 建立包含 App 與 Applications 捷徑的壓縮唯讀 DMG。

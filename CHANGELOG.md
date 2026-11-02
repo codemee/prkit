@@ -2,6 +2,19 @@
 
 ## Unreleased / 尚未發佈
 
+- 尚無 / None.
+
+## [0.3.0] - 2026-11-02
+
+### 新增 / Added
+
+- 系統匣選單新增目前使用者的開機自動啟動核取方塊；Windows 使用登錄檔，macOS 使用 LaunchAgent，Linux 使用 XDG autostart。
+- 新增地球／「中」／「En」三態語言按鈕，可即時切換隨系統、中文與英文，並保存選擇。
+- Add a start-at-login checkbox backed by the per-user Windows Run key, macOS LaunchAgent, or Linux XDG autostart entry.
+- Add an instant, persistent three-state language button for system default, Chinese, and English.
+
+### 發佈 / Publishing
+
 - PyPI 在推送 `v*` 版本標籤後自動發布，保留手動重試；相同 ref 排隊執行，並在上傳前檢查已存在的檔案。
 - Automatically publish to PyPI on `v*` tag pushes, retaining serialized manual retries and duplicate-file checks.
 
@@ -52,3 +65,4 @@ Earlier releases are listed on [GitHub Releases](https://github.com/codemee/prki
 
 [0.2.0]: https://github.com/codemee/prkit/compare/v0.1.1...v0.2.0
 [0.2.1]: https://github.com/codemee/prkit/compare/v0.2.0...v0.2.1
+[0.3.0]: https://github.com/codemee/prkit/compare/v0.2.1...v0.3.0

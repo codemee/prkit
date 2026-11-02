@@ -20,8 +20,9 @@
     - 輸入法模式須跟隨 Caps Lock、快捷鍵與選單切換，不需輸入監控權限；第三方輸入法來源內部的私有模式不在支援範圍。
     - 可設定背景顏色、透明度與顯示時間（1–60 秒，0 表示持續顯示）；拖曳期間暫停隱藏倒數。
     - 保存顯示模式、外觀、時間與位置；螢幕移除後須回到可見螢幕。顯示不得搶取鍵盤焦點，更新不應依賴滑鼠移動。
-4. 結束：取消上面各項工具的效果後結束程式
-5. 發佈與打包：由 GitHub Actions 雲端建置 Python 套件、Windows x64 桌面版與 macOS Apple Silicon App。
+4. 系統匣設定：提供開機自動啟動核取方塊，依目前使用者的作業系統登入機制新增或移除啟動項；提供地球／「中」／「En」三態按鈕，切換隨系統、中文、英文，立即更新介面並保存選擇。
+5. 結束：取消上面各項工具的效果後結束程式
+6. 發佈與打包：由 GitHub Actions 雲端建置 Python 套件、Windows x64 桌面版與 macOS Apple Silicon App。
     - 桌面版不需另安裝 Python／uv；Windows 提供可直接執行的單一 EXE，內含獨立游標復原 watchdog 模式；macOS 提供含 Applications 拖曳捷徑的 DMG，不建置 Intel 版。
     - `v*` 版本標籤自動觸發桌面打包；手動執行可取得測試 artifact，不自動公開版本。
     - Windows 須驗證不依賴旁置檔案的單一 EXE，macOS 須唯讀掛載 DMG 並對其中 App 執行啟動測試；提供 SHA-256 校驗檔，兩平台成功後附到 GitHub Release，沒有 Release 時建立草稿。

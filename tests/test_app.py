@@ -87,6 +87,24 @@ def test_keyboard_failure_reverts_enabled_state(qapp, monkeypatch) -> None:
     assert warnings and "permission denied" in warnings[0]
 
 
+def test_autostart_toggle_reverts_when_system_write_fails(qapp, monkeypatch) -> None:
+    from prkit import autostart
+
+    controller = AppController(qapp, MemoryStore(), FakeMonitor(), FakeSpotlight())
+    warnings: list[str] = []
+    monkeypatch.setattr(autostart, "is_enabled", lambda: False)
+
+    def fail(_enabled: bool) -> None:
+        raise PermissionError("denied")
+
+    monkeypatch.setattr(autostart, "set_enabled", fail)
+    monkeypatch.setattr(controller.tray, "notify_warning", warnings.append)
+    controller.tray.autostart_checkbox.click()
+
+    assert not controller.tray.autostart_checkbox.isChecked()
+    assert warnings and "denied" in warnings[0]
+
+
 def test_cleanup_stops_effects(qapp) -> None:
     store = MemoryStore()
     monitor = FakeMonitor()

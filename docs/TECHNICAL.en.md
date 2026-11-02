@@ -73,6 +73,12 @@ The overlay updates on the Qt main thread and uses `repaint()` for immediate dra
 
 Caps Lock mode displays ON/OFF; input source mode displays the source label. Appearance updates preserve the current text. Display duration is 1–60 seconds, or 0 to remain visible. Dragging pauses the timeout; releasing saves the position and restarts the timeout. `QSettings` stores the mode, enabled state, color, opacity, duration, and position under `capslock/*`. Existing settings default to `capslock`; unknown modes and non-macOS platforms fall back to Caps Lock mode.
 
+## Start at login and language
+
+`autostart.py` manages the current user's login entry: the `PRKit` value under the Windows `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` key, `~/Library/LaunchAgents/com.codemee.prkit.plist` on macOS, or `autostart/prkit.desktop` in the Linux XDG configuration directory. Disabling removes only PRKit's entry. The tray menu reads the actual state whenever it opens and reverts the checkbox if a write fails. Frozen builds use their current executable path; Python installations run `-m prkit` with the environment's interpreter, preferring `pythonw.exe` on Windows.
+
+The `language` key in `QSettings` stores `system`, `zh`, or `en`. System mode uses `QLocale.system()` to select Chinese or English. The three-state button updates the tray UI and messages immediately. Qt's application name stays fixed so changing language never changes the existing settings location.
+
 ## Desktop packaging
 
 `desktop/PRKit.spec` includes Python, Qt, and platform dependencies using a Windows one-file EXE and a macOS app bundle. The macOS bundle uses the stable identifier `com.codemee.prkit`, version metadata, and `LSUIElement` to retain menu-bar-only operation. Cloud builds render ICO/ICNS icons from the existing SVG. The ad-hoc-signed app is copied with `ditto`, then `hdiutil` creates a compressed read-only DMG containing the app and an Applications shortcut.

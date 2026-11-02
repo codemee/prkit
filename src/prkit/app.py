@@ -7,9 +7,11 @@ from contextlib import suppress
 from PySide6.QtCore import QObject, QSignalBlocker, QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
 
+from prkit import autostart
 from prkit.capslock import CapsLockMonitor
 from prkit.input_source import InputSourceMonitor
 from prkit.keyboard import KeyboardMonitor
+from prkit.language import effective_language, tr
 from prkit.overlays import CapsLockOverlay, KeystrokeOverlay
 from prkit.settings import SettingsStore, SettingsStoreProtocol
 from prkit.spotlight import SpotlightBackend, create_spotlight
@@ -33,6 +35,9 @@ class AppController(QObject):
         self.spotlight = spotlight or create_spotlight(self.settings.spotlight)
         self.keystroke = KeystrokeOverlay(self.settings.keystroke)
         self.capslock = CapsLockOverlay(self.settings.capslock)
+        self.capslock.setToolTip(
+            tr("拖曳以移動狀態提示", effective_language(self.settings.language))
+        )
         self.capslock_monitor = capslock_monitor or CapsLockMonitor(self)
         self.input_source_monitor = input_source_monitor or InputSourceMonitor(self)
         if sys.platform != "darwin":
@@ -52,6 +57,9 @@ class AppController(QObject):
             keystroke_opacity=self.set_keystroke_opacity,
         )
         self.tray.exit_requested.connect(self.shutdown)
+        self.tray.autostart_changed.connect(self.set_autostart_enabled)
+        self.tray.language_changed.connect(self.set_language)
+        self.tray.menu.aboutToShow.connect(self.refresh_autostart)
         self.tray.panel.capslock_enabled_changed.connect(self.set_capslock_enabled)
         self.tray.panel.capslock_color_changed.connect(self.set_capslock_color)
         self.tray.panel.capslock_opacity_changed.connect(self.set_capslock_opacity)
@@ -70,12 +78,38 @@ class AppController(QObject):
         self._app.aboutToQuit.connect(self.cleanup)
 
     def start(self) -> None:
+        self.refresh_autostart()
         self.tray.show()
         self.spotlight.set_enabled(self.settings.spotlight.enabled)
         if self.settings.keystroke.enabled:
             self.set_keystroke_enabled(True)
         if self.settings.capslock.enabled:
             self.set_capslock_enabled(True)
+
+    def refresh_autostart(self) -> None:
+        try:
+            self.tray.set_autostart_checked(autostart.is_enabled())
+        except OSError as error:
+            self.tray.notify_warning(self._text("無法設定開機自動啟動：{error}", error=error))
+
+    def set_autostart_enabled(self, enabled: bool) -> None:
+        try:
+            autostart.set_enabled(enabled)
+        except OSError as error:
+            self.tray.set_autostart_checked(not enabled)
+            self.refresh_autostart()
+            self.tray.notify_warning(self._text("無法設定開機自動啟動：{error}", error=error))
+
+    def set_language(self, preference: str) -> None:
+        if preference not in {"system", "zh", "en"}:
+            return
+        self.settings.language = preference
+        self.tray.set_language(preference)
+        self.capslock.setToolTip(self._text("拖曳以移動狀態提示"))
+        self._save()
+
+    def _text(self, source: str, **values: object) -> str:
+        return tr(source, effective_language(self.settings.language)).format(**values)
 
     def set_capslock_enabled(self, enabled: bool) -> None:
         self.settings.capslock.enabled = enabled
@@ -106,7 +140,7 @@ class AppController(QObject):
 
     def _show_input_source(self, name: str) -> None:
         if self.settings.capslock.mode == "input_source":
-            self.capslock.show_input_source(name)
+            self.capslock.show_input_source(self._text(name))
 
     def set_capslock_color(self, color: str) -> None:
         self.settings.capslock.color = color
@@ -132,14 +166,14 @@ class AppController(QObject):
         self.set_capslock_enabled(False)
         with QSignalBlocker(self.tray.panel.capslock_enabled):
             self.tray.panel.capslock_enabled.setChecked(False)
-        self.tray.notify_warning(f"無法顯示鍵盤狀態：{message}")
+        self.tray.notify_warning(self._text("無法顯示鍵盤狀態：{message}", message=message))
 
     def set_spotlight_enabled(self, enabled: bool) -> None:
         try:
             self.spotlight.set_enabled(enabled)
         except Exception as error:
             self._disable_spotlight_ui()
-            self.tray.notify_warning(f"無法啟用聚光燈游標：{error}")
+            self.tray.notify_warning(self._text("無法啟用聚光燈游標：{error}", error=error))
             return
         self.settings.spotlight.enabled = enabled
         self._save()
@@ -162,7 +196,7 @@ class AppController(QObject):
             self.spotlight.set_appearance(value.color, value.opacity, value.size)
         except Exception as error:
             self._disable_spotlight_ui()
-            self.tray.notify_warning(f"無法更新聚光燈游標：{error}")
+            self.tray.notify_warning(self._text("無法更新聚光燈游標：{error}", error=error))
             return
         self._save()
 
@@ -194,7 +228,9 @@ class AppController(QObject):
         success, error = self.monitor.start()
         if not success:
             self._disable_keystroke_ui()
-            self.tray.notify_warning(f"無法啟用按鍵顯示：{error or '未知錯誤'}")
+            self.tray.notify_warning(
+                self._text("無法啟用按鍵顯示：{error}", error=error or self._text("未知錯誤"))
+            )
             return
         self.settings.keystroke.enabled = True
         self._save()
@@ -214,7 +250,7 @@ class AppController(QObject):
 
     def _keyboard_failed(self, message: str) -> None:
         self._disable_keystroke_ui()
-        self.tray.notify_warning(f"按鍵監聽已停止：{message}")
+        self.tray.notify_warning(self._text("按鍵監聽已停止：{message}", message=message))
 
     def _disable_keystroke_ui(self) -> None:
         self._keystroke_start_pending = False
@@ -248,8 +284,8 @@ class AppController(QObject):
 
 def create_application(arguments: Sequence[str] | None = None) -> QApplication:
     app = QApplication(list(arguments) if arguments is not None else sys.argv)
-    app.setApplicationName("簡報瑞士刀")
     app.setOrganizationName("prkit")
+    app.setApplicationName("簡報瑞士刀")
     app.setQuitOnLastWindowClosed(False)
     return app
 
@@ -257,7 +293,10 @@ def create_application(arguments: Sequence[str] | None = None) -> QApplication:
 def main() -> int:
     app = create_application()
     if not TrayController.is_available():
-        QMessageBox.critical(None, "簡報瑞士刀", "此桌面環境沒有可用的系統匣。")
+        language = effective_language(SettingsStore().load().language)
+        QMessageBox.critical(
+            None, tr("簡報瑞士刀", language), tr("此桌面環境沒有可用的系統匣。", language)
+        )
         return 1
     controller = AppController(app)
     controller.start()

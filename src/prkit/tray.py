@@ -22,7 +22,8 @@ from PySide6.QtWidgets import (
     QWidgetAction,
 )
 
-from prkit.icon import tray_icon
+from prkit.icon import language_icon, tray_icon
+from prkit.language import effective_language, tr
 from prkit.platform import is_wayland
 from prkit.settings import (
     MAX_SPOTLIGHT_SIZE,
@@ -37,6 +38,7 @@ class ColorButton(QPushButton):
     def __init__(self, color: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._color = color
+        self._dialog_title = "選擇顏色"
         self.setFixedSize(42, 24)
         self.setToolTip("選擇顏色")
         self.clicked.connect(self._choose_color)
@@ -54,7 +56,7 @@ class ColorButton(QPushButton):
         )
 
     def _choose_color(self) -> None:
-        chosen = QColorDialog.getColor(QColor(self._color), self, "選擇顏色")
+        chosen = QColorDialog.getColor(QColor(self._color), self, self._dialog_title)
         if chosen.isValid():
             self.set_color(chosen.name())
             self.color_changed.emit(self._color)
@@ -126,6 +128,7 @@ class SettingsPanel(QWidget):
         layout.setSpacing(10)
 
         self.spotlight_enabled = QCheckBox("啟用聚光燈游標")
+        self.spotlight_enabled.setProperty("i18n", "啟用聚光燈游標")
         self.spotlight_enabled.setChecked(settings.spotlight.enabled)
         self.spotlight_color = ColorButton(settings.spotlight.color)
         self.spotlight_opacity = ValueSlider(10, 100, settings.spotlight.opacity, "%")
@@ -144,6 +147,7 @@ class SettingsPanel(QWidget):
         layout.addWidget(self._separator())
 
         self.keystroke_enabled = QCheckBox("啟用按鍵顯示")
+        self.keystroke_enabled.setProperty("i18n", "啟用按鍵顯示")
         self.keystroke_enabled.setChecked(settings.keystroke.enabled)
         self.keystroke_color = ColorButton(settings.keystroke.color)
         self.keystroke_opacity = ValueSlider(10, 100, settings.keystroke.opacity, "%")
@@ -155,6 +159,7 @@ class SettingsPanel(QWidget):
         layout.addWidget(self._separator())
         layout.addWidget(self._section_title("Caps Lock／輸入法狀態"))
         self.capslock_enabled = QCheckBox("啟用狀態顯示")
+        self.capslock_enabled.setProperty("i18n", "啟用狀態顯示")
         self.capslock_enabled.setChecked(settings.capslock.enabled)
         self.capslock_color = ColorButton(settings.capslock.color)
         self.capslock_opacity = ValueSlider(10, 100, settings.capslock.opacity, "%")
@@ -176,11 +181,13 @@ class SettingsPanel(QWidget):
         layout.addLayout(self._row("透明度", self.capslock_opacity))
         layout.addLayout(self._row("顯示時間", self.capslock_duration))
         hint = QLabel("顯示時可用滑鼠拖曳，位置會自動保存。")
+        hint.setProperty("i18n", hint.text())
         hint.setWordWrap(True)
         layout.addWidget(hint)
 
         if is_wayland():
             warning = QLabel("⚠ Wayland 不保證支援全域按鍵與覆蓋層")
+            warning.setProperty("i18n", warning.text())
             warning.setWordWrap(True)
             warning.setStyleSheet("color: #b26a00; padding-top: 6px")
             layout.addWidget(warning)
@@ -199,6 +206,22 @@ class SettingsPanel(QWidget):
         self.capslock_mode.currentIndexChanged.connect(
             lambda index: self.capslock_mode_changed.emit(self.capslock_mode.itemData(index))
         )
+        self.retranslate(effective_language(settings.language))
+
+    def retranslate(self, language: str) -> None:
+        for widget in self.findChildren(QLabel) + self.findChildren(QCheckBox):
+            key = widget.property("i18n")
+            if key:
+                widget.setText(tr(key, language))
+        for button in self.findChildren(ColorButton):
+            button._dialog_title = tr("選擇顏色", language)
+            button.setToolTip(button._dialog_title)
+        self.capslock_duration.setSuffix(tr(" 秒", language))
+        self.capslock_duration.setSpecialValueText(tr("一直顯示", language))
+        self.capslock_duration.setToolTip(tr("狀態變化後的顯示時間；0 表示一直顯示", language))
+        self.capslock_mode.setItemText(0, tr("Caps Lock 指示燈", language))
+        if self.capslock_mode.count() > 1:
+            self.capslock_mode.setItemText(1, tr("目前輸入法（中文／英文）", language))
 
     def set_spotlight_enabled(self, enabled: bool) -> None:
         self.spotlight_enabled.setChecked(enabled)
@@ -209,6 +232,7 @@ class SettingsPanel(QWidget):
     @staticmethod
     def _section_title(text: str) -> QLabel:
         label = QLabel(text)
+        label.setProperty("i18n", text)
         font = label.font()
         font.setBold(True)
         label.setFont(font)
@@ -226,6 +250,7 @@ class SettingsPanel(QWidget):
         layout = QHBoxLayout()
         layout.setContentsMargins(18, 0, 0, 0)
         title = QLabel(label)
+        title.setProperty("i18n", label)
         title.setMinimumWidth(62)
         layout.addWidget(title)
         layout.addWidget(widget, 1)
@@ -234,6 +259,8 @@ class SettingsPanel(QWidget):
 
 class TrayController(QObject):
     exit_requested = Signal()
+    autostart_changed = Signal(bool)
+    language_changed = Signal(str)
 
     def __init__(self, settings: AppSettings, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -243,12 +270,59 @@ class TrayController(QObject):
         panel_action.setDefaultWidget(self.panel)
         self.menu.addAction(panel_action)
         self.menu.addSeparator()
-        exit_action = QAction("結束", self.menu)
-        exit_action.triggered.connect(self.exit_requested)
-        self.menu.addAction(exit_action)
+        autostart_row = QWidget(self.menu)
+        autostart_layout = QHBoxLayout(autostart_row)
+        autostart_layout.setContentsMargins(14, 4, 14, 4)
+        self.autostart_checkbox = QCheckBox(autostart_row)
+        self.autostart_checkbox.toggled.connect(self.autostart_changed)
+        autostart_layout.addWidget(self.autostart_checkbox)
+        autostart_action = QWidgetAction(self.menu)
+        autostart_action.setDefaultWidget(autostart_row)
+        self.menu.addAction(autostart_action)
+        self.language_mode = settings.language
+        language_row = QWidget(self.menu)
+        language_layout = QHBoxLayout(language_row)
+        language_layout.setContentsMargins(14, 4, 14, 4)
+        self.language_label = QLabel(language_row)
+        self.language_button = QPushButton(language_row)
+        self.language_button.setFixedSize(40, 36)
+        self.language_button.clicked.connect(self._cycle_language)
+        language_layout.addWidget(self.language_label)
+        language_layout.addStretch(1)
+        language_layout.addWidget(self.language_button)
+        language_action = QWidgetAction(self.menu)
+        language_action.setDefaultWidget(language_row)
+        self.menu.addAction(language_action)
+        self.exit_action = QAction(self.menu)
+        self.exit_action.triggered.connect(self.exit_requested)
+        self.menu.addAction(self.exit_action)
         self.tray = QSystemTrayIcon(tray_icon(), self)
-        self.tray.setToolTip("簡報瑞士刀")
         self.tray.setContextMenu(self.menu)
+        self.retranslate(effective_language(settings.language))
+
+    def retranslate(self, language: str) -> None:
+        self.panel.retranslate(language)
+        self.autostart_checkbox.setText(tr("開機自動啟動", language))
+        mode_label = {"system": "隨系統", "zh": "中文", "en": "英文"}[self.language_mode]
+        separator = ": " if language == "en" else "："
+        self.language_label.setText(f"{tr('語言', language)}{separator}{tr(mode_label, language)}")
+        self.language_button.setIcon(language_icon(self.language_mode))
+        self.language_button.setToolTip(self.language_label.text())
+        self.exit_action.setText(tr("結束", language))
+        self.tray.setToolTip(tr("簡報瑞士刀", language))
+
+    def set_language(self, preference: str) -> None:
+        self.language_mode = preference
+        self.retranslate(effective_language(preference))
+
+    def _cycle_language(self) -> None:
+        modes = ("system", "zh", "en")
+        self.language_changed.emit(modes[(modes.index(self.language_mode) + 1) % len(modes)])
+
+    def set_autostart_checked(self, enabled: bool) -> None:
+        self.autostart_checkbox.blockSignals(True)
+        self.autostart_checkbox.setChecked(enabled)
+        self.autostart_checkbox.blockSignals(False)
 
     @staticmethod
     def is_available() -> bool:
@@ -262,7 +336,9 @@ class TrayController(QObject):
         self.tray.hide()
 
     def notify_warning(self, message: str) -> None:
-        self.tray.showMessage("簡報瑞士刀", message, QSystemTrayIcon.MessageIcon.Warning, 5000)
+        self.tray.showMessage(
+            self.tray.toolTip(), message, QSystemTrayIcon.MessageIcon.Warning, 5000
+        )
 
     def connect_settings(
         self,

@@ -39,6 +39,7 @@ def test_round_trip(tmp_path) -> None:
     settings.capslock.mode = "input_source"
     settings.capslock.x = -1400
     settings.capslock.y = 120
+    settings.language = "en"
 
     store.save(settings)
 
@@ -55,6 +56,7 @@ def test_invalid_values_are_sanitized(tmp_path) -> None:
     backend.setValue("capslock/opacity", 500)
     backend.setValue("capslock/duration", -1)
     backend.setValue("capslock/mode", "invalid")
+    backend.setValue("language", "invalid")
     backend.sync()
 
     settings = SettingsStore(ini_settings(tmp_path)).load()
@@ -67,6 +69,7 @@ def test_invalid_values_are_sanitized(tmp_path) -> None:
     assert settings.capslock.opacity == 100
     assert settings.capslock.duration == 0
     assert settings.capslock.mode == "capslock"
+    assert settings.language == "system"
 
     backend.setValue("spotlight/size", 1)
     backend.sync()
