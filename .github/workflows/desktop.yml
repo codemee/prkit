@@ -47,9 +47,9 @@ jobs:
         with:
           name: desktop-package-${{ matrix.platform }}
           path: |
-            dist/PRKit-*.exe
+            dist/PRKit-*.zip
             dist/PRKit-*.dmg
-            dist/PRKit-*.exe.sha256
+            dist/PRKit-*.zip.sha256
             dist/PRKit-*.dmg.sha256
           if-no-files-found: error
           compression-level: 0
@@ -83,4 +83,4 @@ jobs:
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" --verify-tag --draft --title "prkit $RELEASE_TAG" --generate-notes
           fi
-          gh release upload "$RELEASE_TAG" artifacts/*.exe artifacts/*.dmg artifacts/*.sha256 --clobber
+          gh release upload "$RELEASE_TAG" artifacts/*.zip artifacts/*.dmg artifacts/*.sha256 --clobber

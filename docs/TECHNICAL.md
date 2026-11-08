@@ -81,11 +81,11 @@ Caps Lock 提示顯示 ON／OFF，輸入法模式顯示來源名稱；調整外�
 
 ## 桌面打包
 
-`desktop/PRKit.spec` 使用 PyInstaller 將 Python、Qt 與平台相依套件一起打包：Windows 使用 one-file EXE；macOS 使用 App bundle，設定固定 bundle ID `com.codemee.prkit`、版本與 `LSUIElement`，維持僅選單列顯示的行為。圖示由既有 SVG 在雲端轉成 ICO／ICNS；macOS App 使用 ad-hoc 簽章，經 `ditto` 複製後，以 `hdiutil` 建立包含 App 與 Applications 捷徑的壓縮唯讀 DMG。
+`desktop/PRKit.spec` 使用 PyInstaller 將 Python、Qt 與平台相依套件一起打包：Windows 使用 onedir 資料夾並以 ZIP 散布，避免每次啟動都解壓；macOS 使用 App bundle，設定固定 bundle ID `com.codemee.prkit`、版本與 `LSUIElement`，維持僅選單列顯示的行為。圖示由既有 SVG 在雲端轉成 ICO／ICNS；macOS App 使用 ad-hoc 簽章，經 `ditto` 複製後，以 `hdiutil` 建立包含 App 與 Applications 捷徑的壓縮唯讀 DMG。
 
-Windows 單檔 EXE 以 `--cursor-watchdog` 模式啟動另一個獨立程序；入口在載入 Qt 前先分流，因此不會開啟第二個 GUI。子程序設為 `PYINSTALLER_RESET_ENVIRONMENT=1`，使用自己的解壓執行環境，避免主程式終止後依賴已移除的 runtime。父程序等待就緒事件（最多 30 秒），確認 watchdog 已開啟父程序／停止事件控制代碼後，才允許啟用聚光燈。停止時通知並等待 watchdog 退出；初始化失敗會清理控制代碼。從 Python 安裝時仍支援同環境的 console-script helper 或 `python -m prkit.cursor_watchdog`。PyInstaller 明確收集 `pynput` 的動態 Windows 後端。
+Windows EXE 以 `--cursor-watchdog` 模式啟動另一個獨立程序；入口在載入 Qt 前先分流，因此不會開啟第二個 GUI。子程序保留 `PYINSTALLER_RESET_ENVIRONMENT=1`，確保它能在主程式異常退出後獨立運作；資料夾版共用磁碟上的 `_internal`，不會再次解壓。父程序等待就緒事件（最多 30 秒），確認 watchdog 已開啟父程序／停止事件控制代碼後，才允許啟用聚光燈。啟動時若聚光燈設定為啟用，這段等待在背景執行，Qt 主執行緒可先處理系統匣；使用者期間取消啟用或結束時會停止多餘的 watchdog。停止時通知並等待 watchdog 退出；初始化失敗會清理控制代碼。從 Python 安裝時仍支援同環境的 console-script helper 或 `python -m prkit.cursor_watchdog`。PyInstaller 明確收集 `pynput` 的動態 Windows 後端。
 
-`desktop/build.py` 只由 Windows／macOS runner 執行。Windows 僅複製單一 EXE 到新暫存資料夾；macOS 驗證、唯讀掛載 DMG 並確認 Applications 捷徑，再執行其中 App 的 `--smoke-test`。測試報告寫入檔案，適用沒有 stdout 的 GUI 執行檔；測試不載入使用者偏好、不啟用聚光燈、不修改游標。Windows 實際驗證 watchdog 就緒與正常退出；macOS 驗證 HID、輸入來源查詢與 observer 清理，並檢查映像檔內 App 的簽章。成功後才輸出校驗檔及上傳套件。
+`desktop/build.py` 只由 Windows／macOS runner 執行。Windows 將完整資料夾打成 ZIP，再解壓到新暫存資料夾，確認 `PRKit.exe` 與 `_internal` 存在；macOS 驗證、唯讀掛載 DMG 並確認 Applications 捷徑，再執行其中 App 的 `--smoke-test`。測試報告寫入檔案，適用沒有 stdout 的 GUI 執行檔；測試不載入使用者偏好、不啟用聚光燈、不修改游標。Windows 實際驗證 watchdog 就緒與正常退出；macOS 驗證 HID、輸入來源查詢與 observer 清理，並檢查映像檔內 App 的簽章。成功後才輸出校驗檔及上傳套件。
 
 `desktop.yml` 於版本標籤或手動觸發，在 GitHub 建置 Windows x64 與 macOS arm64；版本標籤建置完成後將資產附到 Release，必要時建立草稿。`publish.yml` 同樣在推送 `v*` 標籤後自動建置並發佈 PyPI，保留手動重試，並驗證版本標籤與套件版本一致；相同 ref 排隊執行，上傳前檢查已存在的檔案。完整流程見[發佈指南](RELEASING.md)。
 

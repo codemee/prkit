@@ -23,7 +23,7 @@
 4. 系統匣設定：提供開機自動啟動核取方塊，依目前使用者的作業系統登入機制新增或移除啟動項；提供地球／「中」／「En」三態按鈕，切換隨系統、中文、英文，立即更新介面並保存選擇。
 5. 結束：取消上面各項工具的效果後結束程式
 6. 發佈與打包：由 GitHub Actions 雲端建置 Python 套件、Windows x64 桌面版與 macOS Apple Silicon App。
-    - 桌面版不需另安裝 Python／uv；Windows 提供可直接執行的單一 EXE，內含獨立游標復原 watchdog 模式；macOS 提供含 Applications 拖曳捷徑的 DMG，不建置 Intel 版。
+    - 桌面版不需另安裝 Python／uv；Windows 提供含完整程式資料夾的 ZIP，解壓後執行 `PRKit.exe`，游標復原 watchdog 可獨立於主程式運作；macOS 提供含 Applications 拖曳捷徑的 DMG，不建置 Intel 版。
     - `v*` 版本標籤自動觸發桌面打包；手動執行可取得測試 artifact，不自動公開版本。
-    - Windows 須驗證不依賴旁置檔案的單一 EXE，macOS 須唯讀掛載 DMG 並對其中 App 執行啟動測試；提供 SHA-256 校驗檔，兩平台成功後附到 GitHub Release，沒有 Release 時建立草稿。
+    - Windows 須在新暫存資料夾解壓 ZIP，驗證 `PRKit.exe`、`_internal` 與獨立 watchdog；macOS 須唯讀掛載 DMG 並對其中 App 執行啟動測試；提供 SHA-256 校驗檔，兩平台成功後附到 GitHub Release，沒有 Release 時建立草稿。
     - PyPI 在推送 `v*` 版本標籤後自動觸發，保留手動重試與 Trusted Publishing；維護者確認後公開 Release 並更新 `latest` 穩定版標籤。

@@ -19,10 +19,10 @@
 
 | 平台 | 下載檔案 | 啟動方式 |
 | --- | --- | --- |
-| Windows x64 | `PRKit-0.3.0-windows-x64.exe` | 直接開啟執行 |
-| macOS Apple Silicon | `PRKit-0.3.0-macos-arm64.dmg` | 開啟 DMG，將 `PRKit.app` 拖到「Applications」捷徑後啟動 |
+| Windows x64 | `PRKit-0.3.1-windows-x64.zip` | 解壓完整資料夾後執行 `PRKit/PRKit.exe` |
+| macOS Apple Silicon | `PRKit-0.3.1-macos-arm64.dmg` | 開啟 DMG，將 `PRKit.app` 拖到「Applications」捷徑後啟動 |
 
-Windows 為單一 EXE，已包含執行環境與游標復原 watchdog，不需額外下載檔案。macOS 目前僅提供 Apple Silicon 版。程式啟動後顯示在系統匣／選單列，不會開啟主視窗。
+Windows ZIP 包含完整執行環境與游標復原 watchdog；請保留整個 `PRKit` 資料夾。macOS 目前僅提供 Apple Silicon 版。程式啟動後顯示在系統匣／選單列，不會開啟主視窗。若啟用了開機自動啟動，搬移 Windows 資料夾後請在選單取消勾選再重新勾選，以更新啟動路徑。
 
 系統匣選單中的「開機自動啟動」會在目前使用者登入時啟動程式，取消勾選即可移除。語言按鈕依序切換地球（隨系統）、「中」（中文）和「En」（英文）；切換會立即生效並保存。
 
@@ -53,7 +53,11 @@ uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
-若要固定特定版本，將 `latest` 改成版本標籤，例如 `v0.3.0`。
+若要固定特定版本，將 `latest` 改成版本標籤，例如 `v0.3.1`。
+
+## 授權
+
+PRKit 以 [GNU GPL 3.0 或更新版本](LICENSE)授權。桌面下載檔亦附有 `LICENSE` 授權全文。
 
 若安裝後找不到 `prkit` 指令，執行 `uv tool update-shell`，再重新開啟終端機。移除工具可使用 `uv tool uninstall prkit`。
 

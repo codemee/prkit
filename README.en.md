@@ -18,16 +18,16 @@ Download from [GitHub Releases](https://github.com/codemee/prkit/releases/latest
 
 | Platform | Archive | Launch |
 | --- | --- | --- |
-| Windows x64 | `PRKit-0.3.0-windows-x64.exe` | Open the executable directly |
-| macOS Apple Silicon | `PRKit-0.3.0-macos-arm64.dmg` | Open the DMG and drag `PRKit.app` onto its Applications shortcut |
+| Windows x64 | `PRKit-0.3.1-windows-x64.zip` | Extract the complete folder and run `PRKit/PRKit.exe` |
+| macOS Apple Silicon | `PRKit-0.3.1-macos-arm64.dmg` | Open the DMG and drag `PRKit.app` onto its Applications shortcut |
 
-The Windows download is a single EXE containing the runtime and cursor-recovery watchdog; no additional files are required. The macOS download supports Apple Silicon only. The application appears in the tray/menu bar without opening a main window.
+The Windows ZIP contains the runtime and cursor-recovery watchdog; keep the entire `PRKit` folder together. The macOS download supports Apple Silicon only. The application appears in the tray/menu bar without opening a main window. If start at login is enabled, uncheck and recheck it after moving the Windows folder to update the saved path.
 
 In the tray menu, check **Start at login** to launch PRKit when the current user signs in; uncheck it to remove the login entry. The language button cycles through globe (system default), 中 (Chinese), and En (English). Changes apply immediately and are saved.
 
 These builds do not use a Windows publisher certificate or Apple Developer ID signing/notarization; macOS uses an ad-hoc signature. Follow your operating system's security prompts to allow a download whose source you have verified. The macOS keystroke display still requires Input Monitoring permission for `PRKit`; input source status does not. Each download has a corresponding `.sha256` checksum file.
 
-Version tags automatically trigger GitHub cloud desktop builds, tests of the standalone EXE and mounted DMG, and PyPI publishing. To build desktop apps manually, run **Build desktop apps** in Actions and download its Artifacts. See the [release guide](docs/RELEASING.md).
+Version tags automatically trigger GitHub cloud desktop builds, tests of the extracted Windows ZIP and mounted DMG, and PyPI publishing. To build desktop apps manually, run **Build desktop apps** in Actions and download its Artifacts. See the [release guide](docs/RELEASING.md).
 
 ## Install from PyPI
 
@@ -52,7 +52,11 @@ uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
-To pin a specific release, replace `latest` with a version tag such as `v0.3.0`.
+To pin a specific release, replace `latest` with a version tag such as `v0.3.1`.
+
+## License
+
+PRKit is licensed under the [GNU GPL version 3 or later](LICENSE). Desktop downloads also include the full `LICENSE` text.
 
 If the `prkit` command is not found after installation, run `uv tool update-shell` and open a new terminal. To remove the tool, run `uv tool uninstall prkit`.
 

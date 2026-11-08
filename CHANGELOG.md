@@ -1,8 +1,13 @@
 # Changelog / 版本紀錄
 
-## Unreleased / 尚未發佈
+## [0.3.1] - 2026-11-08
 
-- 尚無 / None.
+- Windows 桌面版改用資料夾打包 ZIP，避免每次啟動解壓單檔 EXE；打包測試會從解壓後的資料夾執行。
+- 已保存的聚光燈設定在背景等待游標 watchdog 就緒，避免啟動時阻塞系統匣。
+- 明確以 GPL-3.0-or-later 授權，並在 Python 套件與桌面下載檔附上授權全文。
+- Package Windows as a folder ZIP to avoid unpacking a one-file EXE on every launch, and test the extracted bundle.
+- Wait for the saved spotlight's cursor watchdog in the background so the tray remains responsive during startup.
+- Declare GPL-3.0-or-later and include its full text in Python distributions and desktop downloads.
 
 ## [0.3.0] - 2026-11-02
 
@@ -65,4 +70,5 @@ Earlier releases are listed on [GitHub Releases](https://github.com/codemee/prki
 
 [0.2.0]: https://github.com/codemee/prkit/compare/v0.1.1...v0.2.0
 [0.2.1]: https://github.com/codemee/prkit/compare/v0.2.0...v0.2.1
+[0.3.1]: https://github.com/codemee/prkit/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/codemee/prkit/compare/v0.2.1...v0.3.0

@@ -11,6 +11,7 @@ hidden = ["pynput.keyboard._win32", "pynput.mouse._win32"] if is_windows else []
 analysis = Analysis(
     [str(root / "desktop" / "launcher.py")],
     pathex=[str(root / "src"), str(root / "desktop")],
+    datas=[(str(root / "LICENSE"), ".")],
     hiddenimports=hidden,
     excludes=["tkinter", "PyQt5", "PyQt6", "PySide2"],
 )
@@ -18,14 +19,14 @@ if is_windows:
     exe = EXE(
         PYZ(analysis.pure),
         analysis.scripts,
-        analysis.binaries,
-        analysis.datas,
         [],
+        exclude_binaries=True,
         name="PRKit",
         console=False,
         upx=False,
         icon=str(assets / "PRKit.ico"),
     )
+    bundle = COLLECT(exe, analysis.binaries, analysis.datas, name="PRKit", upx=False)
 else:
     exe = EXE(
         PYZ(analysis.pure),

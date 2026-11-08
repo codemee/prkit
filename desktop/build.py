@@ -1,4 +1,4 @@
-"""Build and smoke-test a standalone EXE or macOS DMG on GitHub runners."""
+"""Build and smoke-test a Windows folder ZIP or macOS DMG."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -78,6 +79,7 @@ def main() -> None:
         subprocess.run(
             ["ditto", str(ROOT / "dist" / "PRKit.app"), str(stage / "PRKit.app")], check=True
         )
+        shutil.copy2(ROOT / "LICENSE", stage / "LICENSE")
         (stage / "Applications").symlink_to("/Applications")
         subprocess.run(
             [
@@ -119,17 +121,27 @@ def main() -> None:
                 )
                 if not (mount / "Applications").is_symlink():
                     raise RuntimeError("DMG is missing the Applications shortcut")
+                if not (mount / "LICENSE").is_file():
+                    raise RuntimeError("DMG is missing the license")
                 smoke_test(mount / "PRKit.app" / "Contents" / "MacOS" / "PRKit", report)
             finally:
                 subprocess.run(["hdiutil", "detach", str(mount)], check=True)
     else:
-        artifact = ROOT / "dist" / f"{name}.exe"
-        shutil.copy2(ROOT / "dist" / "PRKit.exe", artifact)
-        # Only the single EXE is copied; no sibling helper or runtime directory.
-        with tempfile.TemporaryDirectory(prefix="prkit-exe-test-") as temporary:
-            executable = Path(temporary) / artifact.name
-            shutil.copy2(artifact, executable)
-            smoke_test(executable, report)
+        bundle = ROOT / "dist" / "PRKit"
+        if not (bundle / "PRKit.exe").is_file() or not (bundle / "_internal").is_dir():
+            raise RuntimeError("Windows bundle is missing PRKit.exe or _internal")
+        shutil.copy2(ROOT / "LICENSE", bundle / "LICENSE")
+        artifact = ROOT / "dist" / f"{name}.zip"
+        shutil.make_archive(str(artifact.with_suffix("")), "zip", bundle.parent, bundle.name)
+        with tempfile.TemporaryDirectory(prefix="prkit-zip-test-") as temporary:
+            with zipfile.ZipFile(artifact) as archive:
+                archive.extractall(temporary)
+            extracted = Path(temporary) / "PRKit"
+            if not (extracted / "_internal").is_dir():
+                raise RuntimeError("Windows ZIP is missing the _internal directory")
+            if not (extracted / "LICENSE").is_file():
+                raise RuntimeError("Windows ZIP is missing the license")
+            smoke_test(extracted / "PRKit.exe", report)
     with artifact.open("rb") as stream:
         digest = hashlib.file_digest(stream, "sha256").hexdigest()
     artifact.with_suffix(artifact.suffix + ".sha256").write_text(

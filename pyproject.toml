@@ -1,8 +1,10 @@
 [project]
 name = "prkit"
-version = "0.3.0"
+version = "0.3.1"
 description = "A cross-platform system-tray presentation toolkit"
 readme = "README.md"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [
     { name = "meebox", email = "meebox@gmail.com" }
 ]

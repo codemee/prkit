@@ -1,9 +1,13 @@
+from threading import Event
+
+import pytest
 from PySide6.QtCore import QObject, Signal
 
 from prkit.app import AppController
 from prkit.capslock import CapsLockMonitor
 from prkit.input_source import InputSourceMonitor
 from prkit.settings import AppSettings
+from prkit.windows_cursor import WindowsCursorSpotlight
 
 
 class MemoryStore:
@@ -119,6 +123,63 @@ def test_cleanup_stops_effects(qapp) -> None:
     assert not spotlight.enabled
     assert not monitor.running
     assert monitor.stop_count == 1
+
+
+@pytest.mark.parametrize("cancel", [False, True])
+def test_saved_spotlight_waits_for_watchdog_without_blocking_tray(
+    qapp, qtbot, monkeypatch, cancel
+) -> None:
+    import prkit.app as app_module
+    import prkit.windows_cursor as cursor_module
+
+    monkeypatch.setattr(app_module.sys, "platform", "win32")
+    monkeypatch.setattr(app_module.autostart, "is_enabled", lambda: False)
+    started = Event()
+    release = Event()
+    stopped = Event()
+
+    class SlowWatchdog:
+        def __init__(self) -> None:
+            started.set()
+            assert release.wait(5)
+
+        def stop(self) -> None:
+            stopped.set()
+
+    class SafeSpotlight(WindowsCursorSpotlight):
+        def __init__(self) -> None:
+            self.enabled = False
+
+        def enable_with_watchdog(self, watchdog) -> None:
+            self.enabled = True
+            self.watchdog = watchdog
+
+        def set_enabled(self, enabled: bool) -> None:
+            self.enabled = enabled
+            if not enabled and hasattr(self, "watchdog"):
+                self.watchdog.stop()
+
+    monkeypatch.setattr(cursor_module, "CursorWatchdog", SlowWatchdog)
+    store = MemoryStore()
+    store.settings.spotlight.enabled = True
+    spotlight = SafeSpotlight()
+    controller = AppController(qapp, store, FakeMonitor(), spotlight)
+    controller.start()
+    try:
+        qtbot.waitUntil(started.is_set)
+        assert controller.tray.tray.isVisible()
+        assert not spotlight.enabled
+        if cancel:
+            controller.set_spotlight_enabled(False)
+        release.set()
+        if cancel:
+            qtbot.waitUntil(stopped.is_set)
+            assert not spotlight.enabled
+        else:
+            qtbot.waitUntil(lambda: spotlight.enabled)
+    finally:
+        release.set()
+        controller.cleanup()
 
 
 class FakeCapsLockMonitor(CapsLockMonitor):

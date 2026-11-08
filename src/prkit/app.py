@@ -3,8 +3,9 @@ from __future__ import annotations
 import sys
 from collections.abc import Sequence
 from contextlib import suppress
+from threading import Event, Thread
 
-from PySide6.QtCore import QObject, QSignalBlocker, QTimer
+from PySide6.QtCore import QObject, QSignalBlocker, QTimer, Signal
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from prkit import autostart
@@ -19,6 +20,9 @@ from prkit.tray import TrayController
 
 
 class AppController(QObject):
+    startup_watchdog_ready = Signal(object)
+    startup_watchdog_failed = Signal(str)
+
     def __init__(
         self,
         app: QApplication,
@@ -46,6 +50,10 @@ class AppController(QObject):
         self.tray = TrayController(self.settings, self)
         self._shutting_down = False
         self._keystroke_start_pending = False
+        self._startup_watchdog_pending = False
+        self._startup_cancel = Event()
+        self.startup_watchdog_ready.connect(self._finish_startup_spotlight)
+        self.startup_watchdog_failed.connect(self._fail_startup_spotlight)
 
         self.tray.connect_settings(
             spotlight_enabled=self.set_spotlight_enabled,
@@ -80,11 +88,56 @@ class AppController(QObject):
     def start(self) -> None:
         self.refresh_autostart()
         self.tray.show()
-        self.spotlight.set_enabled(self.settings.spotlight.enabled)
+        if self.settings.spotlight.enabled:
+            if sys.platform == "win32":
+                from prkit.windows_cursor import WindowsCursorSpotlight
+
+                if isinstance(self.spotlight, WindowsCursorSpotlight):
+                    self._start_spotlight_watchdog()
+                else:
+                    self.set_spotlight_enabled(True)
+            else:
+                self.set_spotlight_enabled(True)
         if self.settings.keystroke.enabled:
             self.set_keystroke_enabled(True)
         if self.settings.capslock.enabled:
             self.set_capslock_enabled(True)
+
+    def _start_spotlight_watchdog(self) -> None:
+        from prkit.windows_cursor import CursorWatchdog
+
+        self._startup_watchdog_pending = True
+
+        def wait_for_watchdog() -> None:
+            try:
+                watchdog = CursorWatchdog()
+            except Exception as error:
+                if not self._startup_cancel.is_set():
+                    self.startup_watchdog_failed.emit(str(error))
+                return
+            if self._startup_cancel.is_set():
+                watchdog.stop()
+            else:
+                self.startup_watchdog_ready.emit(watchdog)
+
+        Thread(target=wait_for_watchdog, name="prkit-startup-watchdog", daemon=True).start()
+
+    def _finish_startup_spotlight(self, watchdog: object) -> None:
+        self._startup_watchdog_pending = False
+        if self._startup_cancel.is_set() or not self.settings.spotlight.enabled:
+            watchdog.stop()
+            return
+        try:
+            self.spotlight.enable_with_watchdog(watchdog)
+        except Exception as error:
+            self._disable_spotlight_ui()
+            self.tray.notify_warning(self._text("無法啟用聚光燈游標：{error}", error=error))
+
+    def _fail_startup_spotlight(self, message: str) -> None:
+        self._startup_watchdog_pending = False
+        if self.settings.spotlight.enabled and not self._startup_cancel.is_set():
+            self._disable_spotlight_ui()
+            self.tray.notify_warning(self._text("無法啟用聚光燈游標：{error}", error=message))
 
     def refresh_autostart(self) -> None:
         try:
@@ -169,6 +222,10 @@ class AppController(QObject):
         self.tray.notify_warning(self._text("無法顯示鍵盤狀態：{message}", message=message))
 
     def set_spotlight_enabled(self, enabled: bool) -> None:
+        if self._startup_watchdog_pending:
+            self.settings.spotlight.enabled = enabled
+            self._save()
+            return
         try:
             self.spotlight.set_enabled(enabled)
         except Exception as error:
@@ -272,6 +329,7 @@ class AppController(QObject):
         self._app.quit()
 
     def cleanup(self) -> None:
+        self._startup_cancel.set()
         self._keystroke_start_pending = False
         self.capslock_monitor.stop()
         self.input_source_monitor.stop()

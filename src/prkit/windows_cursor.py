@@ -194,21 +194,27 @@ class WindowsCursorSpotlight:
         if enabled == self._enabled:
             return
         if enabled:
-            watchdog = CursorWatchdog()
-            try:
-                self._replace_cursors()
-            except Exception:
-                restore_system_cursors()
-                watchdog.stop()
-                raise
-            self._watchdog = watchdog
-            self._enabled = True
+            self.enable_with_watchdog(CursorWatchdog())
         else:
             restore_system_cursors()
             self._enabled = False
             if self._watchdog:
                 self._watchdog.stop()
                 self._watchdog = None
+
+    def enable_with_watchdog(self, watchdog: CursorWatchdog) -> None:
+        """Apply cursors only after an independently started watchdog is ready."""
+        if self._enabled:
+            watchdog.stop()
+            return
+        try:
+            self._replace_cursors()
+        except Exception:
+            restore_system_cursors()
+            watchdog.stop()
+            raise
+        self._watchdog = watchdog
+        self._enabled = True
 
     def sync_position(self) -> None:
         """The Windows implementation is the system cursor and needs no syncing."""

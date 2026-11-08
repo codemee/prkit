@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import json
 import sys
-import traceback
-from pathlib import Path
 
 
 def main() -> int:
@@ -17,6 +14,10 @@ def main() -> int:
         return watch(int(sys.argv[2]), sys.argv[3], sys.argv[4])
 
     if len(sys.argv) == 3 and sys.argv[1] == "--smoke-test":
+        import json
+        import traceback
+        from pathlib import Path
+
         report = Path(sys.argv[2])
         try:
             from desktop_smoke import check_bundle
