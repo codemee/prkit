@@ -54,13 +54,13 @@ Each cloud build generates icons and freezes the application. Windows extracts t
 
 ## 發佈 / Publish
 
-以下以未來的 `0.3.2` 為例；版本標籤必須與套件及執行期版本一致。
+以下以未來的 `0.3.3` 為例；版本標籤必須與套件及執行期版本一致。
 
-Example for a future `0.3.2` release; the version tag must match both package and runtime versions.
+Example for a future `0.3.3` release; the version tag must match both package and runtime versions.
 
 ```bash
-git tag v0.3.2
-git push origin v0.3.2
+git tag v0.3.3
+git push origin v0.3.3
 ```
 
 推送標籤會自動觸發桌面打包。兩個平台都通過後，流程將 ZIP、DMG 與校驗檔附到該版本的 GitHub Release；若不存在就建立草稿。草稿不會自動公開，讓維護者完成 PyPI 與版本說明後統一發布。
@@ -72,7 +72,7 @@ The tag automatically triggers both desktop builds and PyPI publishing. Once bot
 No separate dispatch is needed for PyPI. Use the manual command below only to retry a failed run. Runs for the same ref are serialized, and `uv publish --check-url` checks existing files to skip duplicate uploads. Inspect the original result first; never modify an already published version.
 
 ```bash
-gh workflow run publish.yml --ref v0.3.2
+gh workflow run publish.yml --ref v0.3.3
 gh run list --workflow publish.yml --limit 5
 gh run view <run-id>
 ```
@@ -86,12 +86,12 @@ gh run view <run-id>
 After verifying the PyPI version and all desktop assets, publish the draft with release notes from a file:
 
 ```bash
-gh release edit v0.3.2 --title "prkit v0.3.2" --notes-file <release-notes.md> --draft=false --latest
-git tag -f latest v0.3.2
+gh release edit v0.3.3 --title "prkit v0.3.3" --notes-file <release-notes.md> --draft=false --latest
+git tag -f latest v0.3.3
 git push origin refs/tags/latest --force
 ```
 
-`latest` 是供 `uvx`／`uv tool install` 使用的可移動穩定版標籤；`v0.3.2` 等版本標籤保持不變。版本已存在 PyPI 時不可重傳同版，應先檢查遠端狀態；若需修改套件內容則建立新版本。
+`latest` 是供 `uvx`／`uv tool install` 使用的可移動穩定版標籤；`v0.3.3` 等版本標籤保持不變。版本已存在 PyPI 時不可重傳同版，應先檢查遠端狀態；若需修改套件內容則建立新版本。
 
 `latest` is the movable stable tag used by Git-based `uvx`/`uv tool install` commands. Version tags remain immutable. PyPI versions cannot be overwritten: inspect remote state before retrying, and use a new version for changed package contents.
 

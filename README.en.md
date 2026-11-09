@@ -4,6 +4,8 @@
 
 A cross-platform system-tray presentation assistant. The application has no main window; all settings are available from the tray icon's context menu.
 
+Only one PRKit instance can run per user. Launching it again shows an already-running message instead of creating another tray icon.
+
 ## Features
 
 - Spotlight cursor: customizable color, opacity, and circle diameter from 48 to 320 px. Windows uses a real system cursor, while macOS and Linux use a click-through transparent overlay.
@@ -18,8 +20,8 @@ Download from [GitHub Releases](https://github.com/codemee/prkit/releases/latest
 
 | Platform | Archive | Launch |
 | --- | --- | --- |
-| Windows x64 | `PRKit-0.3.1-windows-x64.zip` | Extract the complete folder and run `PRKit/PRKit.exe` |
-| macOS Apple Silicon | `PRKit-0.3.1-macos-arm64.dmg` | Open the DMG and drag `PRKit.app` onto its Applications shortcut |
+| Windows x64 | `PRKit-0.3.2-windows-x64.zip` | Extract the complete folder and run `PRKit/PRKit.exe` |
+| macOS Apple Silicon | `PRKit-0.3.2-macos-arm64.dmg` | Open the DMG and drag `PRKit.app` onto its Applications shortcut |
 
 The Windows ZIP contains the runtime and cursor-recovery watchdog; keep the entire `PRKit` folder together. The macOS download supports Apple Silicon only. The application appears in the tray/menu bar without opening a main window. If start at login is enabled, uncheck and recheck it after moving the Windows folder to update the saved path.
 
@@ -52,7 +54,7 @@ uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
-To pin a specific release, replace `latest` with a version tag such as `v0.3.1`.
+To pin a specific release, replace `latest` with a version tag such as `v0.3.2`.
 
 ## License
 

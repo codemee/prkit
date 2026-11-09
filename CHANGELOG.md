@@ -1,5 +1,14 @@
 # Changelog / 版本紀錄
 
+## [0.3.2] - 2026-11-09
+
+- 同一使用者只能執行一份 PRKit；重複啟動會顯示提示並結束，意外退出後可重新啟動。
+- 啟動提示與系統匣通知使用 PRKit 應用程式圖示；提示改為雙語、精簡的扁平交談窗。
+- 提示視窗依訊息內容固定大小，長訊息會換行，避免視窗意外放大。
+- Allow only one PRKit GUI instance per user; a second launch shows a message and exits, while stale locks are recovered after a crash.
+- Use the PRKit icon for startup dialogs and tray notifications, and replace the default message box with a compact bilingual dialog.
+- Size startup dialogs to their content, wrapping long messages and preventing accidental enlargement.
+
 ## [0.3.1] - 2026-11-08
 
 - Windows 桌面版改用資料夾打包 ZIP，避免每次啟動解壓單檔 EXE；打包測試會從解壓後的資料夾執行。
@@ -70,5 +79,6 @@ Earlier releases are listed on [GitHub Releases](https://github.com/codemee/prki
 
 [0.2.0]: https://github.com/codemee/prkit/compare/v0.1.1...v0.2.0
 [0.2.1]: https://github.com/codemee/prkit/compare/v0.2.0...v0.2.1
+[0.3.2]: https://github.com/codemee/prkit/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/codemee/prkit/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/codemee/prkit/compare/v0.2.1...v0.3.0

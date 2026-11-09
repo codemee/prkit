@@ -8,6 +8,10 @@ This document describes Presenter Toolkit's cross-platform backends, native macO
 
 `AppController` reads and writes settings and coordinates the system tray, spotlight, keyboard monitor, and keystroke overlay. The keyboard backend starts only after the tray panel closes so that event monitoring is not initialized inside the native macOS menu-tracking loop. The backend emits unformatted key-down and key-up events only. `KeyChordTracker` removes duplicate events and maintains the current key set, while `KeystrokeOverlay` displays the last complete combination and delays its fade-out until every key is released.
 
+Before creating the tray, the GUI acquires a Qt `QLockFile` in the current user's local application data directory. Copies installed in different locations share this lock. A second launch reports that PRKit is already running and exits; permission or I/O errors are reported instead of starting without protection. The lock is held for the GUI lifetime, and Qt recognizes stale locks after a crash. The cursor watchdog and packaged smoke test use separate entry points and do not acquire it.
+
+The Qt application uses the PRKit tray SVG as its global window icon. Startup messages use a compact custom `QDialog` with a 20 px status badge, vertically aligned text, and a flat button instead of the large default message icon. The dialog calculates and fixes its size from the message width, wrapping long text within a limited width so the window cannot unexpectedly expand. Each dialog explicitly uses the PRKit icon in its title bar, and tray warning notifications pass the same icon to identify their source.
+
 ## macOS spotlight and overlays
 
 macOS has no public API that lets a background application replace the system cursor across applications. The spotlight therefore uses a transparent Qt tool window that follows `QCursor`. The native Cocoa window applies these additional constraints:

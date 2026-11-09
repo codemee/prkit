@@ -4,6 +4,8 @@
 
 跨平台的系統匣簡報輔助工具。程式不會開啟主視窗，所有設定都在系統匣圖示的右鍵選單中完成。
 
+同一使用者只能執行一份 PRKit；再次啟動時會提示已有程式在執行，不會建立第二個系統匣圖示。
+
 ## 功能
 
 - 聚光燈游標：可調整顏色、透明度與 48–320 px 圓圈大小；Windows 使用真正的系統游標，macOS/Linux 使用不攔截點擊的透明覆蓋層。
@@ -19,8 +21,8 @@
 
 | 平台 | 下載檔案 | 啟動方式 |
 | --- | --- | --- |
-| Windows x64 | `PRKit-0.3.1-windows-x64.zip` | 解壓完整資料夾後執行 `PRKit/PRKit.exe` |
-| macOS Apple Silicon | `PRKit-0.3.1-macos-arm64.dmg` | 開啟 DMG，將 `PRKit.app` 拖到「Applications」捷徑後啟動 |
+| Windows x64 | `PRKit-0.3.2-windows-x64.zip` | 解壓完整資料夾後執行 `PRKit/PRKit.exe` |
+| macOS Apple Silicon | `PRKit-0.3.2-macos-arm64.dmg` | 開啟 DMG，將 `PRKit.app` 拖到「Applications」捷徑後啟動 |
 
 Windows ZIP 包含完整執行環境與游標復原 watchdog；請保留整個 `PRKit` 資料夾。macOS 目前僅提供 Apple Silicon 版。程式啟動後顯示在系統匣／選單列，不會開啟主視窗。若啟用了開機自動啟動，搬移 Windows 資料夾後請在選單取消勾選再重新勾選，以更新啟動路徑。
 
@@ -53,7 +55,7 @@ uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
-若要固定特定版本，將 `latest` 改成版本標籤，例如 `v0.3.1`。
+若要固定特定版本，將 `latest` 改成版本標籤，例如 `v0.3.2`。
 
 ## 授權
 

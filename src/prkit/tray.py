@@ -336,9 +336,7 @@ class TrayController(QObject):
         self.tray.hide()
 
     def notify_warning(self, message: str) -> None:
-        self.tray.showMessage(
-            self.tray.toolTip(), message, QSystemTrayIcon.MessageIcon.Warning, 5000
-        )
+        self.tray.showMessage(self.tray.toolTip(), message, self.tray.icon(), 5000)
 
     def connect_settings(
         self,

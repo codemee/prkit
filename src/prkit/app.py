@@ -10,9 +10,11 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 
 from prkit import autostart
 from prkit.capslock import CapsLockMonitor
+from prkit.icon import tray_icon
 from prkit.input_source import InputSourceMonitor
 from prkit.keyboard import KeyboardMonitor
 from prkit.language import effective_language, tr
+from prkit.message_dialog import MessageDialog
 from prkit.overlays import CapsLockOverlay, KeystrokeOverlay
 from prkit.settings import SettingsStore, SettingsStoreProtocol
 from prkit.spotlight import SpotlightBackend, create_spotlight
@@ -344,18 +346,47 @@ def create_application(arguments: Sequence[str] | None = None) -> QApplication:
     app = QApplication(list(arguments) if arguments is not None else sys.argv)
     app.setOrganizationName("prkit")
     app.setApplicationName("簡報瑞士刀")
+    app.setWindowIcon(tray_icon())
     app.setQuitOnLastWindowClosed(False)
     return app
 
 
+def show_message(app: QApplication, icon: QMessageBox.Icon, language: str, message: str) -> None:
+    dialog = MessageDialog(app, icon, language, message)
+    dialog.exec()
+
+
 def main() -> int:
     app = create_application()
-    if not TrayController.is_available():
+    from prkit.single_instance import acquire
+
+    try:
+        instance_lock = acquire()
+    except OSError as error:
         language = effective_language(SettingsStore().load().language)
-        QMessageBox.critical(
-            None, tr("簡報瑞士刀", language), tr("此桌面環境沒有可用的系統匣。", language)
+        show_message(
+            app,
+            QMessageBox.Icon.Critical,
+            language,
+            tr("無法檢查是否已有執行中的 PRKit：{error}", language).format(error=error),
         )
         return 1
-    controller = AppController(app)
-    controller.start()
-    return app.exec()
+    if instance_lock is None:
+        language = effective_language(SettingsStore().load().language)
+        show_message(app, QMessageBox.Icon.Information, language, tr("PRKit 已在執行。", language))
+        return 0
+    try:
+        if not TrayController.is_available():
+            language = effective_language(SettingsStore().load().language)
+            show_message(
+                app,
+                QMessageBox.Icon.Critical,
+                language,
+                tr("此桌面環境沒有可用的系統匣。", language),
+            )
+            return 1
+        controller = AppController(app)
+        controller.start()
+        return app.exec()
+    finally:
+        instance_lock.unlock()

@@ -2,10 +2,13 @@ from threading import Event
 
 import pytest
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QMessageBox
 
 from prkit.app import AppController
 from prkit.capslock import CapsLockMonitor
+from prkit.icon import tray_icon
 from prkit.input_source import InputSourceMonitor
+from prkit.message_dialog import MessageDialog
 from prkit.settings import AppSettings
 from prkit.windows_cursor import WindowsCursorSpotlight
 
@@ -21,6 +24,56 @@ class MemoryStore:
     def save(self, settings: AppSettings) -> None:
         self.settings = settings
         self.save_count += 1
+
+
+@pytest.mark.parametrize(
+    ("icon", "language", "message", "badge", "button", "maximum_width"),
+    [
+        (QMessageBox.Icon.Information, "en", "PRKit is already running.", "i", "OK", 420),
+        (QMessageBox.Icon.Critical, "zh", "PRKit 已在執行。", "!", "確定", 300),
+    ],
+)
+def test_message_dialog_uses_small_aligned_badge_and_app_icon(
+    qapp, qtbot, icon, language, message, badge, button, maximum_width
+) -> None:
+    qapp.setWindowIcon(tray_icon())
+    dialog = MessageDialog(qapp, icon, language, message)
+    qtbot.addWidget(dialog)
+    dialog.show()
+    qapp.processEvents()
+
+    assert dialog.windowIcon().pixmap(32).toImage() == qapp.windowIcon().pixmap(32).toImage()
+    assert dialog.badge.text() == badge
+    assert dialog.badge.size().width() == 20
+    assert dialog.confirm_button.text() == button
+    assert dialog.minimumSize() == dialog.maximumSize()
+    assert dialog.width() <= maximum_width
+    assert dialog.height() <= 150
+    badge_center = dialog.badge.geometry().center().y()
+    message_center = dialog.message_label.geometry().center().y()
+    assert abs(badge_center - message_center) <= 1
+
+    dialog.resize(1160, 1048)
+    qapp.processEvents()
+    assert dialog.width() <= maximum_width
+    assert dialog.height() <= 150
+
+
+def test_long_message_wraps_within_compact_dialog(qapp, qtbot) -> None:
+    dialog = MessageDialog(
+        qapp,
+        QMessageBox.Icon.Critical,
+        "en",
+        "Could not check for a running PRKit instance: access to the application data directory "
+        "was denied by the operating system.",
+    )
+    qtbot.addWidget(dialog)
+    dialog.show()
+    qapp.processEvents()
+
+    assert dialog.width() <= 440
+    assert dialog.height() <= 200
+    assert dialog.minimumSize() == dialog.maximumSize()
 
 
 class FakeMonitor(QObject):

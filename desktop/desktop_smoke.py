@@ -18,6 +18,8 @@ def check_bundle() -> dict[str, object]:
     from prkit.settings import CapsLockSettings
 
     app = create_application([])
+    if app.windowIcon().isNull():
+        raise RuntimeError("Application window icon is missing")
     if tray_icon().isNull():
         raise RuntimeError("Missing Qt SVG support")
     overlay = CapsLockOverlay(CapsLockSettings(enabled=True))

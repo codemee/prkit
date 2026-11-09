@@ -32,6 +32,7 @@ ENGLISH = {
     "英文": "English",
     "中文（注音）": "Chinese (Zhuyin)",
     "結束": "Quit",
+    "確定": "OK",
     "無法設定開機自動啟動：{error}": "Could not change start at login: {error}",
     "無法顯示鍵盤狀態：{message}": "Could not display keyboard status: {message}",
     "無法啟用聚光燈游標：{error}": "Could not enable spotlight cursor: {error}",
@@ -40,6 +41,10 @@ ENGLISH = {
     "未知錯誤": "Unknown error",
     "按鍵監聽已停止：{message}": "Keystroke monitoring stopped: {message}",
     "此桌面環境沒有可用的系統匣。": "No system tray is available in this desktop environment.",
+    "PRKit 已在執行。": "PRKit is already running.",
+    "無法檢查是否已有執行中的 PRKit：{error}": (
+        "Could not check for a running PRKit instance: {error}"
+    ),
 }
 
 
