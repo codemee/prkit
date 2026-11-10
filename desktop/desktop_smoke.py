@@ -11,9 +11,12 @@ def check_bundle() -> dict[str, object]:
         raise RuntimeError("Smoke tests must run from the frozen executable")
     os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
+    from PySide6.QtWidgets import QColorDialog, QPushButton
+
     from prkit import __version__
     from prkit.app import create_application
     from prkit.icon import tray_icon
+    from prkit.language import set_qt_language
     from prkit.overlays import CapsLockOverlay
     from prkit.settings import CapsLockSettings
 
@@ -22,6 +25,15 @@ def check_bundle() -> dict[str, object]:
         raise RuntimeError("Application window icon is missing")
     if tray_icon().isNull():
         raise RuntimeError("Missing Qt SVG support")
+    set_qt_language(app, "zh")
+    color_dialog = QColorDialog()
+    color_dialog.setOption(QColorDialog.ColorDialogOption.DontUseNativeDialog, True)
+    color_dialog.show()
+    app.processEvents()
+    if "確定" not in [button.text() for button in color_dialog.findChildren(QPushButton)]:
+        raise RuntimeError("Packaged Qt Chinese translation is missing")
+    color_dialog.close()
+    set_qt_language(app, "en")
     overlay = CapsLockOverlay(CapsLockSettings(enabled=True))
     overlay.show_state(True)
     app.processEvents()

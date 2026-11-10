@@ -85,6 +85,8 @@ Caps Lock 提示顯示 ON／OFF，輸入法模式顯示來源名稱；調整外�
 
 色塊與語言按鈕採無框線、圓角與 hover 背景，區段使用平面分隔線。macOS 原生選單的內嵌控制項不提供滑鼠追蹤，因此點擊系統匣圖示時改以 `QMenu.popup()` 顯示 Qt 選單；選單開啟期間以 40 ms 計時器檢查游標是否位於語言按鈕內，透過 `pointerHover` 屬性更新背景，關閉選單即停止並清除 hover。其他平台保留系統匣的 context menu。
 
+Qt 內建的色彩選擇視窗使用 `qtbase_zh_TW.qm` 翻譯；啟動及切換語言時安裝或移除 `QTranslator`，讓色票區、欄位與操作按鈕跟隨所選語系。色彩預覽按鈕的樣式表只匹配自身的 `colorSwatch` 名稱，不影響其子視窗的操作按鈕配色。桌面打包測試會驗證 Qt 翻譯檔可載入。
+
 ## 桌面打包
 
 `desktop/PRKit.spec` 使用 PyInstaller 將 Python、Qt 與平台相依套件一起打包：Windows 使用 onedir 資料夾並以 ZIP 散布，避免每次啟動都解壓；macOS 使用 App bundle，設定固定 bundle ID `com.codemee.prkit`、版本與 `LSUIElement`，維持僅選單列顯示的行為，並以 `CFBundleLocalizations` 宣告英文、繁體中文與簡體中文。圖示由既有 SVG 在雲端轉成 ICO／ICNS；macOS App 使用 ad-hoc 簽章，經 `ditto` 複製後，以 `hdiutil` 建立包含 App 與 Applications 捷徑的壓縮唯讀 DMG。

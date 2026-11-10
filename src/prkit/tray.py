@@ -37,6 +37,7 @@ class ColorButton(QPushButton):
 
     def __init__(self, color: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self.setObjectName("colorSwatch")
         self._color = color
         self._dialog_title = "選擇顏色"
         self.setFixedSize(42, 24)
@@ -58,9 +59,10 @@ class ColorButton(QPushButton):
         if swatch.lightnessF() < 0.05:
             hover = QColor("#303030")
         self.setStyleSheet(
-            f"QPushButton {{ background: {self._color}; border: none; "
+            f"QPushButton#colorSwatch {{ background: {self._color}; border: none; "
             "border-radius: 6px; }"
-            f"QPushButton:hover, QPushButton:focus {{ background: {hover.name()}; }}"
+            f"QPushButton#colorSwatch:hover, QPushButton#colorSwatch:focus "
+            f"{{ background: {hover.name()}; }}"
         )
 
     def _choose_color(self) -> None:

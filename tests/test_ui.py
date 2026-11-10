@@ -1,10 +1,45 @@
 from PySide6.QtCore import QPoint
-from PySide6.QtGui import QCursor
-from PySide6.QtWidgets import QCheckBox
+from PySide6.QtGui import QColor, QCursor, QPalette
+from PySide6.QtWidgets import QCheckBox, QColorDialog, QPushButton
 
+from prkit.language import set_qt_language
 from prkit.overlays import KeystrokeOverlay, SpotlightOverlay
 from prkit.settings import AppSettings, KeystrokeSettings, SpotlightSettings
-from prkit.tray import SettingsPanel, TrayController
+from prkit.tray import ColorButton, SettingsPanel, TrayController
+
+
+def test_color_picker_buttons_keep_system_palette(qapp, qtbot) -> None:
+    swatch = ColorButton("#202124")
+    qtbot.addWidget(swatch)
+    picker = QColorDialog(QColor(swatch.color), swatch)
+    picker.setOption(QColorDialog.ColorDialogOption.DontUseNativeDialog, True)
+    qtbot.addWidget(picker)
+    picker.show()
+    qapp.processEvents()
+
+    reference = QPushButton()
+    buttons = picker.findChildren(QPushButton)
+    assert buttons
+    for button in buttons:
+        assert button.palette().color(QPalette.ColorRole.Button) == reference.palette().color(
+            QPalette.ColorRole.Button
+        )
+        assert button.palette().color(QPalette.ColorRole.ButtonText) == reference.palette().color(
+            QPalette.ColorRole.ButtonText
+        )
+
+
+def test_color_picker_follows_selected_language(qapp, qtbot) -> None:
+    for preference, expected in (("zh", "確定"), ("en", "OK")):
+        set_qt_language(qapp, preference)
+        picker = QColorDialog()
+        picker.setOption(QColorDialog.ColorDialogOption.DontUseNativeDialog, True)
+        qtbot.addWidget(picker)
+        picker.show()
+        qapp.processEvents()
+        assert expected in [button.text() for button in picker.findChildren(QPushButton)]
+        picker.close()
+    set_qt_language(qapp, "en")
 
 
 def test_spotlight_resizes_around_same_center(qtbot, monkeypatch) -> None:

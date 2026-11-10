@@ -13,7 +13,7 @@ from prkit.capslock import CapsLockMonitor
 from prkit.icon import tray_icon
 from prkit.input_source import InputSourceMonitor
 from prkit.keyboard import KeyboardMonitor
-from prkit.language import effective_language, tr
+from prkit.language import effective_language, set_qt_language, tr
 from prkit.message_dialog import MessageDialog
 from prkit.overlays import CapsLockOverlay, KeystrokeOverlay
 from prkit.settings import SettingsStore, SettingsStoreProtocol
@@ -158,6 +158,7 @@ class AppController(QObject):
     def set_language(self, preference: str) -> None:
         if preference not in {"system", "zh", "en"}:
             return
+        set_qt_language(self._app, preference)
         self.settings.language = preference
         self.tray.set_language(preference)
         self.capslock.setToolTip(self._text("拖曳以移動狀態提示"))
@@ -348,6 +349,7 @@ def create_application(arguments: Sequence[str] | None = None) -> QApplication:
     app.setApplicationName("簡報瑞士刀")
     app.setWindowIcon(tray_icon())
     app.setQuitOnLastWindowClosed(False)
+    set_qt_language(app, SettingsStore().load().language)
     return app
 
 

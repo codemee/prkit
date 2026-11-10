@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
-from PySide6.QtCore import QLocale
+from PySide6.QtCore import QCoreApplication, QLibraryInfo, QLocale, QTranslator
 
 ENGLISH = {
     "簡報瑞士刀": "PRKit",
@@ -69,3 +70,21 @@ def effective_language(preference: str) -> str:
 
 def tr(text: str, language: str) -> str:
     return ENGLISH.get(text, text) if language == "en" else text
+
+
+def set_qt_language(app: QCoreApplication, preference: str) -> None:
+    """Translate Qt-owned dialogs alongside PRKit's own interface."""
+    previous = getattr(app, "_prkit_qt_translator", None)
+    if previous is not None:
+        app.removeTranslator(previous)
+        previous.deleteLater()
+        app._prkit_qt_translator = None
+    if effective_language(preference) != "zh":
+        return
+
+    path = Path(QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)) / "qtbase_zh_TW.qm"
+    translator = QTranslator(app)
+    if not translator.load(str(path)):
+        raise RuntimeError(f"Could not load Qt translation: {path}")
+    app.installTranslator(translator)
+    app._prkit_qt_translator = translator

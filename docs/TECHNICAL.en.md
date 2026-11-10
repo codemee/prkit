@@ -85,6 +85,8 @@ The `language` key in `QSettings` stores `system`, `zh`, or `en`. System mode re
 
 Color and language buttons use borderless rounded backgrounds with hover feedback, and sections use flat dividers. Native macOS menus do not track the mouse for embedded controls, so tray clicks open a Qt menu with `QMenu.popup()`. A 40 ms timer checks whether the pointer is inside the language button and updates its `pointerHover` property. Closing the menu stops the timer and clears hover. Other platforms retain the tray context menu.
 
+Qt's color picker loads `qtbase_zh_TW.qm`. A `QTranslator` is installed or removed at startup and when the language changes so built-in swatches, fields, and action buttons follow the selected language. The color preview button's style sheet targets only its own `colorSwatch` object name, leaving the dialog's action buttons in the system palette. Desktop smoke tests verify the bundled Qt translation.
+
 ## Desktop packaging
 
 `desktop/PRKit.spec` includes Python, Qt, and platform dependencies using a Windows onedir folder distributed as a ZIP and a macOS app bundle. The folder avoids unpacking on every Windows launch. The macOS bundle uses the stable identifier `com.codemee.prkit`, version metadata, and `LSUIElement` to retain menu-bar-only operation. `CFBundleLocalizations` declares English, Traditional Chinese, and Simplified Chinese. Cloud builds render ICO/ICNS icons from the existing SVG. The ad-hoc-signed app is copied with `ditto`, then `hdiutil` creates a compressed read-only DMG containing the app and an Applications shortcut.
