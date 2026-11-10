@@ -20,12 +20,12 @@ Download from [GitHub Releases](https://github.com/codemee/prkit/releases/latest
 
 | Platform | Archive | Launch |
 | --- | --- | --- |
-| Windows x64 | `PRKit-0.3.2-windows-x64.zip` | Extract the complete folder and run `PRKit/PRKit.exe` |
-| macOS Apple Silicon | `PRKit-0.3.2-macos-arm64.dmg` | Open the DMG and drag `PRKit.app` onto its Applications shortcut |
+| Windows x64 | `PRKit-0.3.3-windows-x64.zip` | Extract the complete folder and run `PRKit/PRKit.exe` |
+| macOS Apple Silicon | `PRKit-0.3.3-macos-arm64.dmg` | Open the DMG and drag `PRKit.app` onto its Applications shortcut |
 
 The Windows ZIP contains the runtime and cursor-recovery watchdog; keep the entire `PRKit` folder together. The macOS download supports Apple Silicon only. The application appears in the tray/menu bar without opening a main window. If start at login is enabled, uncheck and recheck it after moving the Windows folder to update the saved path.
 
-In the tray menu, check **Start at login** to launch PRKit when the current user signs in; uncheck it to remove the login entry. The language button cycles through globe (system default), 中 (Chinese), and En (English). Changes apply immediately and are saved.
+In the tray menu, check **Start at login** to launch PRKit when the current user signs in; uncheck it to remove the login entry. The language button cycles through globe (system default), 中 (Chinese), and En (English). Changes apply immediately and are saved. System mode follows preferred UI languages, including Traditional Chinese on macOS. Color and language buttons use a borderless style with a visible background on hover.
 
 These builds do not use a Windows publisher certificate or Apple Developer ID signing/notarization; macOS uses an ad-hoc signature. Follow your operating system's security prompts to allow a download whose source you have verified. The macOS keystroke display still requires Input Monitoring permission for `PRKit`; input source status does not. Each download has a corresponding `.sha256` checksum file.
 
@@ -54,7 +54,7 @@ uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
-To pin a specific release, replace `latest` with a version tag such as `v0.3.2`.
+To pin a specific release, replace `latest` with a version tag such as `v0.3.3`.
 
 ## License
 

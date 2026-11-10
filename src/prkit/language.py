@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 from PySide6.QtCore import QLocale
 
 ENGLISH = {
@@ -50,7 +52,18 @@ ENGLISH = {
 
 def effective_language(preference: str) -> str:
     if preference == "system":
-        return "zh" if QLocale.system().language() == QLocale.Language.Chinese else "en"
+        if sys.platform == "darwin":
+            from Foundation import NSLocale
+
+            # Qt's locale can be C/English even when macOS prefers Chinese.
+            languages = NSLocale.preferredLanguages()
+        else:
+            languages = QLocale.system().uiLanguages()
+        for tag in languages:
+            language = str(tag).replace("_", "-").split("-", 1)[0].lower()
+            if language in {"zh", "en"}:
+                return language
+        return "en"
     return preference if preference in {"zh", "en"} else "zh"
 
 

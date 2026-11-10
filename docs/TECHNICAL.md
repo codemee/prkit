@@ -81,11 +81,13 @@ Caps Lock 提示顯示 ON／OFF，輸入法模式顯示來源名稱；調整外�
 
 `autostart.py` 以目前使用者的登入機制管理開機啟動：Windows 使用 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` 的 `PRKit` 值；macOS 寫入 `~/Library/LaunchAgents/com.codemee.prkit.plist`；Linux 寫入 XDG 設定目錄下的 `autostart/prkit.desktop`。停用時只移除 PRKit 自己的項目。系統匣選單每次打開時重新讀取實際狀態；寫入失敗會還原核取方塊並顯示錯誤。打包版使用目前 EXE／App 的執行檔路徑，Python 安裝版使用同環境的 Python 執行 `-m prkit`（Windows 優先使用 `pythonw.exe`）。
 
-語言偏好保存在 `QSettings` 的 `language` 鍵，值為 `system`、`zh` 或 `en`。`system` 透過 `QLocale.system()` 選擇中文或英文；三態按鈕切換後即時更新系統匣選單與提示文字。Qt 的應用程式名稱維持固定，避免語言切換改變既有設定的儲存位置。
+語言偏好保存在 `QSettings` 的 `language` 鍵，值為 `system`、`zh` 或 `en`。`system` 在 macOS 讀取 `NSLocale.preferredLanguages()`，其他平台讀取 `QLocale.system().uiLanguages()`，依偏好順序選取第一個支援的中文或英文；皆不支援時使用英文。三態按鈕切換後即時更新系統匣選單與提示文字。Qt 的應用程式名稱維持固定，避免語言切換改變既有設定的儲存位置。
+
+色塊與語言按鈕採無框線、圓角與 hover 背景，區段使用平面分隔線。macOS 原生選單的內嵌控制項不提供滑鼠追蹤，因此點擊系統匣圖示時改以 `QMenu.popup()` 顯示 Qt 選單；選單開啟期間以 40 ms 計時器檢查游標是否位於語言按鈕內，透過 `pointerHover` 屬性更新背景，關閉選單即停止並清除 hover。其他平台保留系統匣的 context menu。
 
 ## 桌面打包
 
-`desktop/PRKit.spec` 使用 PyInstaller 將 Python、Qt 與平台相依套件一起打包：Windows 使用 onedir 資料夾並以 ZIP 散布，避免每次啟動都解壓；macOS 使用 App bundle，設定固定 bundle ID `com.codemee.prkit`、版本與 `LSUIElement`，維持僅選單列顯示的行為。圖示由既有 SVG 在雲端轉成 ICO／ICNS；macOS App 使用 ad-hoc 簽章，經 `ditto` 複製後，以 `hdiutil` 建立包含 App 與 Applications 捷徑的壓縮唯讀 DMG。
+`desktop/PRKit.spec` 使用 PyInstaller 將 Python、Qt 與平台相依套件一起打包：Windows 使用 onedir 資料夾並以 ZIP 散布，避免每次啟動都解壓；macOS 使用 App bundle，設定固定 bundle ID `com.codemee.prkit`、版本與 `LSUIElement`，維持僅選單列顯示的行為，並以 `CFBundleLocalizations` 宣告英文、繁體中文與簡體中文。圖示由既有 SVG 在雲端轉成 ICO／ICNS；macOS App 使用 ad-hoc 簽章，經 `ditto` 複製後，以 `hdiutil` 建立包含 App 與 Applications 捷徑的壓縮唯讀 DMG。
 
 Windows EXE 以 `--cursor-watchdog` 模式啟動另一個獨立程序；入口在載入 Qt 前先分流，因此不會開啟第二個 GUI。子程序保留 `PYINSTALLER_RESET_ENVIRONMENT=1`，確保它能在主程式異常退出後獨立運作；資料夾版共用磁碟上的 `_internal`，不會再次解壓。父程序等待就緒事件（最多 30 秒），確認 watchdog 已開啟父程序／停止事件控制代碼後，才允許啟用聚光燈。啟動時若聚光燈設定為啟用，這段等待在背景執行，Qt 主執行緒可先處理系統匣；使用者期間取消啟用或結束時會停止多餘的 watchdog。停止時通知並等待 watchdog 退出；初始化失敗會清理控制代碼。從 Python 安裝時仍支援同環境的 console-script helper 或 `python -m prkit.cursor_watchdog`。PyInstaller 明確收集 `pynput` 的動態 Windows 後端。
 

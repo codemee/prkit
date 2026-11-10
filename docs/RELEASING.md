@@ -54,9 +54,9 @@ Each cloud build generates icons and freezes the application. Windows extracts t
 
 ## 發佈 / Publish
 
-以下以未來的 `0.3.3` 為例；版本標籤必須與套件及執行期版本一致。
+以下以 `0.3.3` 為例；版本標籤必須與套件及執行期版本一致。
 
-Example for a future `0.3.3` release; the version tag must match both package and runtime versions.
+Example for the `0.3.3` release; the version tag must match both package and runtime versions.
 
 ```bash
 git tag v0.3.3

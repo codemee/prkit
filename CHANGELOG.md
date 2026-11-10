@@ -1,5 +1,14 @@
 # Changelog / 版本紀錄
 
+## [0.3.3] - 2026-11-10
+
+- 修正 macOS 繁體中文系統在「隨系統」模式下顯示英文；改讀系統偏好語言，並在 App 宣告支援的語言。
+- 色塊與語言按鈕改為無框線、圓角的扁平樣式，分隔線改為平面細線。
+- macOS 改用 Qt 彈出選單，並在選單開啟時追蹤游標位置，修正語言按鈕沒有 hover 背景的問題。
+- Fix English appearing in system language mode on Traditional Chinese macOS by reading preferred UI languages and declaring supported app localizations.
+- Use flat, borderless color and language buttons with rounded corners and flat section dividers.
+- Use a Qt popup on macOS and track the pointer while it is open so the language button reliably shows its hover background.
+
 ## [0.3.2] - 2026-11-09
 
 - 同一使用者只能執行一份 PRKit；重複啟動會顯示提示並結束，意外退出後可重新啟動。

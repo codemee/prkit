@@ -21,12 +21,12 @@
 
 | 平台 | 下載檔案 | 啟動方式 |
 | --- | --- | --- |
-| Windows x64 | `PRKit-0.3.2-windows-x64.zip` | 解壓完整資料夾後執行 `PRKit/PRKit.exe` |
-| macOS Apple Silicon | `PRKit-0.3.2-macos-arm64.dmg` | 開啟 DMG，將 `PRKit.app` 拖到「Applications」捷徑後啟動 |
+| Windows x64 | `PRKit-0.3.3-windows-x64.zip` | 解壓完整資料夾後執行 `PRKit/PRKit.exe` |
+| macOS Apple Silicon | `PRKit-0.3.3-macos-arm64.dmg` | 開啟 DMG，將 `PRKit.app` 拖到「Applications」捷徑後啟動 |
 
 Windows ZIP 包含完整執行環境與游標復原 watchdog；請保留整個 `PRKit` 資料夾。macOS 目前僅提供 Apple Silicon 版。程式啟動後顯示在系統匣／選單列，不會開啟主視窗。若啟用了開機自動啟動，搬移 Windows 資料夾後請在選單取消勾選再重新勾選，以更新啟動路徑。
 
-系統匣選單中的「開機自動啟動」會在目前使用者登入時啟動程式，取消勾選即可移除。語言按鈕依序切換地球（隨系統）、「中」（中文）和「En」（英文）；切換會立即生效並保存。
+系統匣選單中的「開機自動啟動」會在目前使用者登入時啟動程式，取消勾選即可移除。語言按鈕依序切換地球（隨系統）、「中」（中文）和「En」（英文）；切換會立即生效並保存。「隨系統」依介面語言偏好選取支援的中文或英文；macOS 繁體中文系統會顯示中文。色塊與語言按鈕採無框線樣式，滑鼠移入時顯示背景回饋。
 
 桌面版尚未使用 Windows 發行者憑證或 Apple Developer ID 簽署／公證；macOS 僅使用 ad-hoc 簽章。若系統阻擋你確認來源的下載檔案，請依系統安全提示允許開啟。macOS 按鍵顯示仍需在「輸入監控」允許 `PRKit`；輸入法狀態模式不需此權限。每個下載檔另提供 `.sha256` 校驗檔。
 
@@ -55,7 +55,7 @@ uv tool install git+https://github.com/codemee/prkit.git@latest
 prkit
 ```
 
-若要固定特定版本，將 `latest` 改成版本標籤，例如 `v0.3.2`。
+若要固定特定版本，將 `latest` 改成版本標籤，例如 `v0.3.3`。
 
 ## 授權
 

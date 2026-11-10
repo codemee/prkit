@@ -3,8 +3,8 @@ from __future__ import annotations
 import sys
 from collections.abc import Callable
 
-from PySide6.QtCore import QObject, Qt, Signal
-from PySide6.QtGui import QAction, QColor
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
+from PySide6.QtGui import QAction, QColor, QCursor
 from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
@@ -40,6 +40,8 @@ class ColorButton(QPushButton):
         self._color = color
         self._dialog_title = "選擇顏色"
         self.setFixedSize(42, 24)
+        self.setFlat(True)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setToolTip("選擇顏色")
         self.clicked.connect(self._choose_color)
         self.set_color(color)
@@ -50,9 +52,15 @@ class ColorButton(QPushButton):
 
     def set_color(self, color: str) -> None:
         self._color = QColor(color).name().upper()
+        swatch = QColor(self._color)
+        hover = swatch.darker(115) if swatch.lightnessF() > 0.5 else swatch.lighter(140)
+        # Lifting black also needs a visible hover state (lighter() keeps it black).
+        if swatch.lightnessF() < 0.05:
+            hover = QColor("#303030")
         self.setStyleSheet(
-            f"QPushButton {{ background: {self._color}; border: 1px solid #777; "
-            "border-radius: 4px; }"
+            f"QPushButton {{ background: {self._color}; border: none; "
+            "border-radius: 6px; }"
+            f"QPushButton:hover, QPushButton:focus {{ background: {hover.name()}; }}"
         )
 
     def _choose_color(self) -> None:
@@ -242,7 +250,8 @@ class SettingsPanel(QWidget):
     def _separator() -> QFrame:
         frame = QFrame()
         frame.setFrameShape(QFrame.Shape.HLine)
-        frame.setFrameShadow(QFrame.Shadow.Sunken)
+        frame.setFixedHeight(1)
+        frame.setStyleSheet("border: none; background: palette(midlight);")
         return frame
 
     @staticmethod
@@ -286,6 +295,15 @@ class TrayController(QObject):
         self.language_label = QLabel(language_row)
         self.language_button = QPushButton(language_row)
         self.language_button.setFixedSize(40, 36)
+        self.language_button.setFlat(True)
+        self.language_button.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.language_button.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        self.language_button.setStyleSheet(
+            "QPushButton { background: transparent; border: none; border-radius: 6px; }"
+            'QPushButton:hover, QPushButton[pointerHover="true"] '
+            "{ background: rgba(128, 128, 128, 144); }"
+            "QPushButton:pressed { background: rgba(128, 128, 128, 192); }"
+        )
         self.language_button.clicked.connect(self._cycle_language)
         language_layout.addWidget(self.language_label)
         language_layout.addStretch(1)
@@ -297,8 +315,41 @@ class TrayController(QObject):
         self.exit_action.triggered.connect(self.exit_requested)
         self.menu.addAction(self.exit_action)
         self.tray = QSystemTrayIcon(tray_icon(), self)
-        self.tray.setContextMenu(self.menu)
+        if sys.platform == "darwin":
+            # Native macOS menus do not track hover for embedded QWidgetActions.
+            # Open a Qt popup instead so the settings controls receive mouse events.
+            self.tray.activated.connect(self._show_menu)
+            self._hover_timer = QTimer(self)
+            self._hover_timer.setInterval(40)
+            self._hover_timer.timeout.connect(self._refresh_language_hover)
+            self.menu.aboutToShow.connect(self._hover_timer.start)
+            self.menu.aboutToHide.connect(self._clear_language_hover)
+        else:
+            self.tray.setContextMenu(self.menu)
         self.retranslate(effective_language(settings.language))
+
+    def _show_menu(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        if reason in {
+            QSystemTrayIcon.ActivationReason.Trigger,
+            QSystemTrayIcon.ActivationReason.Context,
+        }:
+            self.menu.popup(QCursor.pos())
+
+    def _refresh_language_hover(self) -> None:
+        button = self.language_button
+        hovered = button.rect().contains(button.mapFromGlobal(QCursor.pos()))
+        if button.property("pointerHover") != hovered:
+            button.setProperty("pointerHover", hovered)
+            button.style().unpolish(button)
+            button.style().polish(button)
+            button.update()
+
+    def _clear_language_hover(self) -> None:
+        self._hover_timer.stop()
+        self.language_button.setProperty("pointerHover", False)
+        self.language_button.style().unpolish(self.language_button)
+        self.language_button.style().polish(self.language_button)
+        self.language_button.update()
 
     def retranslate(self, language: str) -> None:
         self.panel.retranslate(language)

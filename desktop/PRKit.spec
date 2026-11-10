@@ -47,6 +47,7 @@ else:
         version=__version__,
         info_plist={
             "CFBundleShortVersionString": __version__,
+            "CFBundleLocalizations": ["en", "zh-Hant", "zh-Hans"],
             "LSUIElement": True,
             "NSHighResolutionCapable": True,
             "NSInputMonitoringUsageDescription": "PRKit uses read-only keyboard monitoring to display keystrokes.",

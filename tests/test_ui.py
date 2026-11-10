@@ -77,3 +77,28 @@ def test_language_button_cycles_and_retranslates(qapp, qtbot) -> None:
     with qtbot.waitSignal(tray.language_changed) as signal:
         tray.language_button.click()
     assert signal.args == ["system"]
+
+
+def test_macos_language_hover_without_mouse_enter_events(qapp, qtbot, monkeypatch) -> None:
+    import prkit.tray as module
+
+    monkeypatch.setattr(module.sys, "platform", "darwin")
+    settings = AppSettings.defaults()
+    settings.language = "en"
+    tray = TrayController(settings)
+    # Keep the popup within the test screen while preserving its embedded button.
+    tray.menu.actions()[0].setVisible(False)
+    position = QPoint(-100, -100)
+    monkeypatch.setattr(module.QCursor, "pos", staticmethod(lambda: position))
+    tray.menu.popup(QPoint(100, 100))
+    try:
+        qtbot.waitUntil(lambda: tray.language_button.property("pointerHover") is False)
+        before = tray.language_button.grab().toImage()
+        position = tray.language_button.mapToGlobal(QPoint(8, 8))
+        qtbot.waitUntil(lambda: tray.language_button.property("pointerHover") is True)
+        assert tray.language_button.grab().toImage() != before
+        position = QPoint(-100, -100)
+        qtbot.waitUntil(lambda: tray.language_button.property("pointerHover") is False)
+    finally:
+        tray.menu.hide()
+    assert not tray._hover_timer.isActive()
