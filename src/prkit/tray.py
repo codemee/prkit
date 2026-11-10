@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QWidgetAction,
 )
 
+from prkit import __version__
 from prkit.icon import language_icon, tray_icon
 from prkit.language import effective_language, tr
 from prkit.platform import is_wayland
@@ -30,6 +31,10 @@ from prkit.settings import (
     MIN_SPOTLIGHT_SIZE,
     AppSettings,
 )
+
+
+def app_version_text(language: str) -> str:
+    return f"{tr('簡報瑞士刀', language)} v{__version__}"
 
 
 class ColorButton(QPushButton):
@@ -136,6 +141,23 @@ class SettingsPanel(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(14, 12, 14, 12)
         layout.setSpacing(10)
+
+        header = QHBoxLayout()
+        self.title_label = QLabel("簡報瑞士刀")
+        self.title_label.setProperty("i18n", "簡報瑞士刀")
+        title_font = self.title_label.font()
+        title_font.setBold(True)
+        title_font.setPointSize(title_font.pointSize() + 2)
+        self.title_label.setFont(title_font)
+        header.addWidget(self.title_label)
+        header.addStretch(1)
+        self.version_label = QLabel(f"v{__version__}")
+        self.version_label.setStyleSheet(
+            "background: palette(midlight); border-radius: 5px; padding: 3px 6px;"
+        )
+        header.addWidget(self.version_label)
+        layout.addLayout(header)
+        layout.addWidget(self._separator())
 
         self.spotlight_enabled = QCheckBox("啟用聚光燈游標")
         self.spotlight_enabled.setProperty("i18n", "啟用聚光燈游標")
@@ -362,7 +384,7 @@ class TrayController(QObject):
         self.language_button.setIcon(language_icon(self.language_mode))
         self.language_button.setToolTip(self.language_label.text())
         self.exit_action.setText(tr("結束", language))
-        self.tray.setToolTip(tr("簡報瑞士刀", language))
+        self.tray.setToolTip(app_version_text(language))
 
     def set_language(self, preference: str) -> None:
         self.language_mode = preference

@@ -2,6 +2,7 @@ from PySide6.QtCore import QPoint
 from PySide6.QtGui import QColor, QCursor, QPalette
 from PySide6.QtWidgets import QCheckBox, QColorDialog, QPushButton
 
+from prkit import __version__
 from prkit.language import set_qt_language
 from prkit.overlays import KeystrokeOverlay, SpotlightOverlay
 from prkit.settings import AppSettings, KeystrokeSettings, SpotlightSettings
@@ -99,12 +100,18 @@ def test_language_button_cycles_and_retranslates(qapp, qtbot) -> None:
 
     tray.set_language("zh")
     assert tray.language_button.icon().isNull() is False
+    assert tray.panel.title_label.text() == "簡報瑞士刀"
+    assert tray.panel.version_label.text() == f"v{__version__}"
+    assert tray.tray.toolTip() == f"簡報瑞士刀 v{__version__}"
     with qtbot.waitSignal(tray.language_changed) as signal:
         tray.language_button.click()
     assert signal.args == ["en"]
 
     tray.set_language("en")
     assert tray.language_label.text() == "Language: English"
+    assert tray.panel.title_label.text() == "PRKit"
+    assert tray.panel.version_label.text() == f"v{__version__}"
+    assert tray.tray.toolTip() == f"PRKit v{__version__}"
     assert tray.panel.spotlight_enabled.text() == "Enable spotlight cursor"
     assert isinstance(tray.autostart_checkbox, QCheckBox)
     assert tray.autostart_checkbox.text() == "Start at login"

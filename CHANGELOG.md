@@ -1,5 +1,12 @@
 # Changelog / 版本紀錄
 
+## [0.3.5] - 2026-11-10
+
+- 在設定面板頂部加入程式名稱與版本標籤，系統匣圖示的提示文字也顯示版本編號。
+- 中英文介面切換時，面板標題與系統匣提示會同步更新程式名稱。
+- Show the app name and version in a header at the top of the settings panel, and add the version to the system tray tooltip.
+- Update the panel title and tray tooltip when switching between Chinese and English.
+
 ## [0.3.4] - 2026-11-10
 
 - 色彩預覽按鈕的樣式只套用在色塊本身，色彩視窗內的操作按鈕維持系統配色，避免深色選值使文字難以辨識。
@@ -95,6 +102,7 @@ Earlier releases are listed on [GitHub Releases](https://github.com/codemee/prki
 
 [0.2.0]: https://github.com/codemee/prkit/compare/v0.1.1...v0.2.0
 [0.2.1]: https://github.com/codemee/prkit/compare/v0.2.0...v0.2.1
+[0.3.5]: https://github.com/codemee/prkit/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/codemee/prkit/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/codemee/prkit/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/codemee/prkit/compare/v0.3.1...v0.3.2
