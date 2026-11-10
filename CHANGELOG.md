@@ -1,5 +1,12 @@
 # Changelog / 版本紀錄
 
+## [0.3.4] - 2026-11-10
+
+- 色彩預覽按鈕的樣式只套用在色塊本身，色彩視窗內的操作按鈕維持系統配色，避免深色選值使文字難以辨識。
+- 色彩視窗的內建色票、欄位與按鈕會跟隨「隨系統／中文／英文」語言設定；桌面打包測試也會驗證繁體中文翻譯檔。
+- Scope the selected-color style to the swatch so color-picker action buttons retain readable system colors.
+- Translate Qt's built-in color picker with the selected system, Chinese, or English language; verify the translation in desktop bundles.
+
 ## [0.3.3] - 2026-11-10
 
 - 修正 macOS 繁體中文系統在「隨系統」模式下顯示英文；改讀系統偏好語言，並在 App 宣告支援的語言。
@@ -88,6 +95,8 @@ Earlier releases are listed on [GitHub Releases](https://github.com/codemee/prki
 
 [0.2.0]: https://github.com/codemee/prkit/compare/v0.1.1...v0.2.0
 [0.2.1]: https://github.com/codemee/prkit/compare/v0.2.0...v0.2.1
+[0.3.4]: https://github.com/codemee/prkit/compare/v0.3.3...v0.3.4
+[0.3.3]: https://github.com/codemee/prkit/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/codemee/prkit/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/codemee/prkit/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/codemee/prkit/compare/v0.2.1...v0.3.0
